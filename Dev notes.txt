@@ -1,0 +1,56 @@
+AuroraLM — Development Session Log
+Date: 2026-07-24
+Status: Smoke tests operational, 9/10 passing. One known edge-case test pending resolution.
+Files Built or Fixed Today
+New Files
+Table
+File	Purpose	Status
+transformer_block.py	TransformerBlock + StateConditioner (adaptive layer norm per block)	✅ Built
+state_encoder.py	Compresses AuroraState171 → state latent (adaLN) + routing prior (MoE)	✅ Built, revised
+config.py	PILOT/SMALL/FULL configs, 171-dim state contract, schema versioning	✅ Built, revised
+NN.py	Assembled AuroraLM top-level model with imports fixed	✅ Built
+test_smoke.py	10 reproducible smoke tests for pre-training verification	✅ Built, revised
+Fixed Files
+Table
+File	Issue	Fix
+rotary_position_embedding.py	RoPE cos/sin tables built at dim/2, mismatch with rotate_half expecting full head_dim	Duplicated frequencies with repeat_interleave(2) to span full head dimension
+config.py	estimated_params() omitted StateConditioner weights	Added per-block conditioner param count
+state_encoder.py	SwiGLU gating zeroed gradients through proj at init	Replaced with simple Linear → SiLU → Linear trunk
+test_smoke.py	mean() loss allowed zero gradients; causal mask test sliced aurora_state per-token	Switched to cross-entropy loss; preserved full state vector for truncated sequences
+Architecture Decisions Locked In
+StateEncoder runs once per forward pass, not per block. The compressed state_latent is broadcast to every TransformerBlock. More efficient and keeps the 171→16 compression in one place.
+Zero-init baseline property holds exactly. state_head, routing_head, and StateConditioner output projections all initialise to zero. At step 0, aurora_state=None and aurora_state=random produce identical logits. Verified.
+StateConditioner is unignorable. It multiplies every hidden state in every block after RMSNorm. Unlike prompt text, the network cannot route around it.
+CONTROL_PILOT config exists. Same architecture, state_size=0, no state encoder created. True control model for A/B experiments.
+Smoke Test Results (Final Run)
+plain
+PASS  test_imports
+PASS  test_forward_shapes
+PASS  test_initial_loss
+FAIL  test_gradient_flow — Zero gradient for state_encoder.trunk.0.weight
+PASS  test_zero_init_baseline
+PASS  test_control_model_equivalence
+PASS  test_causal_mask
+PASS  test_state_encoder_shapes
+PASS  test_parameter_count
+PASS  test_schema_version_in_state_dict
+
+Results: 9 passed, 1 failed out of 10
+Remaining Issue
+test_gradient_flow fails because state_encoder.trunk.0.weight receives zero gradients when state_head is zero-initialised (by design for the baseline property). The gradient through state_head to the trunk is mathematically zero at init.
+Options to resolve:
+Accept the exemption: zero-init parameters are allowed zero gradients by design
+Or: temporarily non-zero initialise state_head for the gradient test only, then restore
+Or: add a small epsilon perturbation to state_head during the gradient test
+The test was revised to exempt zero-init layers, but the exemption list may need tuning to match exact parameter names.
+Next Steps
+Resolve gradient test — one-line fix in test logic
+Build state_schema.py — validate and normalise AuroraState171 input
+Build training scaffold — data loader, training loop, checkpointing
+Run first PILOT training — general corpus + Aurora journal mix
+A/B experiment — correct state vs shuffled state vs no state
+Compute Status
+PILOT: CPU/Colab viable (~10M params)
+SMALL: One rented GPU weekend (~85M params)
+FULL: Pending evidence from PILOT ablations (~2B params)
+No cloud credits spent until PILOT proves state-conditioned generation beats controls.
