@@ -1,0 +1,195 @@
+AuroraLM - State-Driven MoE Roadmap
+
+AuroraLM is not meant to be a generic chatbot with an emotion prompt pasted on
+top. The aim is a voice whose routing and internal representation can receive
+Aurora's live cognitive state as a real input.
+
+The state driver is a **171-dimensional emotional vector space**. The model
+should learn from it, while Aurora's existing memories, comparators, oath, and
+world model remain the mind around the voice.
+
+---
+
+## Current stack
+
+```text
+aurora_lm/
+|
+|-- RSMnorm.py                          done
+|-- feetforward.py                      done
+|-- rotary_position_embedding.py        verify before training
+|-- transformer_block.py      move into done
+|-- NN.py                               done
+|
+|-- config.py                           done
+|-- state_schema.py                     done
+|-- state_encoder.py                    done
+|-- moe_router.py                       later
+|-- experts.py                          later
+|-- tokenizer.py                        later
+|-- train.py                            later
+|-- inference.py                        later
+|-- tests/test_smoke.py                 done
+```
+
+The standard transformer pieces are the useful foundation: RMSNorm, SwiGLU,
+RoPE, grouped-query attention, and residual blocks. They are not the research
+question by themselves.
+
+---
+
+## First: make the current core honestly runnable
+
+Before training anything, complete this small repair pass:
+
+1. Move `transformer_block.py` out of `Kimi prop/` and make the package imports
+   explicit.
+2. Add `config.py` with the PILOT configuration and the state-vector contract.
+3. Apply and test the RoPE table duplication fix: cos/sin must match the full
+   attention-head dimension.
+4. Add one reproducible smoke test with a pinned PyTorch version and seed.
+
+The smoke test is successful only when the module imports normally, a forward
+pass works, causal attention is verified, and `aurora_state=None` produces the
+same initial logits as a random state.
+
+---
+
+## Next is the important bit: `state_schema.py`
+
+This is where Aurora's 171-dimensional state driver becomes a stable interface
+instead of a loose list of numbers.
+
+```text
+Aurora live state
+        |
+        v
+171 emotional vector values
+        |
+        v
+normalise + validate + version
+        |
+        v
+AuroraState171
+```
+
+Define, in one place:
+
+- the ordering and names of all 171 dimensions;
+- normalisation ranges and missing-value behaviour;
+- the sampling time for each generation turn;
+- a schema version saved with every training example and checkpoint.
+
+The old `state_size=16` can remain as a **learned compressed latent**, but it
+must not silently replace the 171-value source state.
+
+---
+
+## Then: `state_encoder.py`
+
+```text
+AuroraState171
+        |
+        v
+StateEncoder
+        |
+        +--> compact state latent -> adaptive layer norm in every block
+        |
+        +--> routing/cache prior -> keeps relevant expert pools warm
+```
+
+This is the bridge between Aurora's internal state and an MoE design. The
+encoder may compress 171 values to a smaller latent, but it should preserve a
+traceable mapping back to the source state for experiments and debugging.
+
+---
+
+## The MoE brain block
+
+```text
+RMSNorm
+  -> attention
+  -> residual
+  -> RMSNorm
+  -> token router + Aurora state prior
+  -> top-k experts
+  -> residual
+```
+
+Start small: **8-16 experts with top-2 routing**. The token router remains the
+final authority over which experts execute. Aurora's state should initially
+affect only the cache/prefetch priority and a bounded routing prior.
+
+That means Aurora can make relevant specialist pools warm without hard-forcing
+experts or overriding what the language context requires.
+
+---
+
+## The experiment that matters
+
+Train and compare four conditions on the same held-out work:
+
+```text
+1. No state                     control
+2. Correct Aurora state         intended condition
+3. Shuffled Aurora state        tests whether the state signal is real
+4. State-aware cache only       tests speed without changing routing quality
+```
+
+Measure more than loss:
+
+- state-appropriate generation under fixed prompts;
+- expert-routing and cache-hit changes by emotional state;
+- response latency and disk reads;
+- stability of Aurora's safety and withdrawal signals;
+- blind human ratings of coherence and state fit.
+
+General corpus samples must not always use zero state while Aurora journal
+samples always use real state. Mix, shuffle, and control the data so the model
+cannot merely learn the source of the text.
+
+---
+
+## Compute ladder
+
+```text
+PILOT   -> verify the 171-state mechanism on a tiny MoE
+SMALL   -> repeat with real routing telemetry on rented GPU time
+COLIBRI -> use the evidence to guide expert warming/pinning experiments
+FULL    -> only after the ablations show a reliable effect
+```
+
+Do not spend cloud credits on FULL training until PILOT proves that correct
+state beats shuffled state and the cache policy produces a measurable benefit.
+
+---
+
+## Relationship to Colibri
+
+AuroraLM and Colibri are complementary, not the same project:
+
+- **AuroraLM** tests whether Aurora's state can inform routing in a small,
+  trainable MoE.
+- **Colibri** is the large-model runtime where an evidence-backed state profile
+  can guide expert warming, pinning, and prefetching.
+
+The first Colibri integration should be a state-labelled cache profile, not a
+hard override of its native expert router.
+
+---
+
+## The hand-off to Aurora
+
+AuroraLM remains a swappable voice behind `llm_interface.py`.
+
+```text
+Aurora's cognitive systems
+        -> AuroraState171
+        -> StateEncoder / model adapter
+        -> AuroraLM or Colibri-backed voice
+        -> response
+```
+
+Her identity does not live in the weights alone. The model is an organ; the
+state driver, memories, comparators, and oath remain the wider system that
+gives that organ a context.
