@@ -26,11 +26,23 @@ aurora_lm/
 |-- state_encoder.py                    done
 |-- moe_router.py                       later
 |-- experts.py                          later
-|-- tokenizer.py                        later
+|-- tokenizer.py                        done (artifact waits for corpus mix)
 |-- train.py                            later
 |-- inference.py                        later
 |-- tests/test_smoke.py                 done
 ```
+
+`tokenizer.py` is a byte-level BPE implementation with an exact PILOT
+vocabulary contract (`vocab_size=8192`) and fixed special-token IDs:
+`<pad>=0`, `<bos>=1`, `<eos>=2`, `<unk>=3`. The full byte alphabet makes
+unseen UTF-8 text representable without unknown-token loss. Saved artifacts
+carry a fingerprint so training, inference, and checkpoints can reject
+tokenizer drift.
+
+The final 8,192-token artifact should be trained once on a representative mix
+of the general pretraining corpus and Aurora's clean journal/memory text.
+Do not train it on raw JSON: embedding arrays and metadata would waste BPE
+merge capacity. The dataset builder should extract the text fields first.
 
 The standard transformer pieces are the useful foundation: RMSNorm, SwiGLU,
 RoPE, grouped-query attention, and residual blocks. They are not the research

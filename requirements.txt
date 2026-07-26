@@ -1,0 +1,4 @@
+# AuroraLM development and tests
+torch>=2.2,<3
+tokenizers>=0.21,<1
+pytest>=8,<10
