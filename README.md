@@ -1,5 +1,8 @@
 # AuroraLM
 
+[![CI](https://github.com/oanewman26-dot/LLM_Development/actions/workflows/ci.yml/badge.svg)](https://github.com/oanewman26-dot/LLM_Development/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
 AuroraLM is an experimental decoder-only language model designed to receive
 Aurora's live cognitive state as a real model input, rather than reducing that
 state to descriptive prompt text.
@@ -15,8 +18,9 @@ outside the language model. AuroraLM is intended to be a replaceable voice
 component within that wider system, not the whole mind.
 
 > **Status:** research prototype. The public repository currently contains the
-> runnable transformer core, state contract, tokenizer implementation and 18
-> automated tests. It does not ship a trained model or claim production
+> runnable transformer core, state contract, tokenizer and untrained sparse-MoE
+> implementations, with 65 automated tests. It does not ship a trained model
+> or claim production
 > readiness.
 
 ## Current public milestone
@@ -29,16 +33,29 @@ component within that wider system, not the whole mind.
   latent. The current top-level model zero-fills the optional regulators.
 - Adaptive layer-normalisation conditioning in every transformer block.
 - A true stateless control configuration for later A/B experiments.
+- An optional 8-expert, top-2 `MOE_PILOT` path with token routing,
+  causal capacity handling, overflow telemetry and function-preserving dense
+  expert cloning. It is implemented and tested, but not trained.
 - An 8,192-token byte-level BPE implementation with fixed special-token IDs,
   deterministic save/load behaviour and artefact fingerprinting.
-- Ten architecture smoke tests and eight tokenizer tests.
+- Sixty-five tests across architecture, data, training, inference, readiness,
+  activation calibration and MoE contracts.
 
 The published tests currently pass on CPU with PyTorch 2.13:
 
 ```text
 Architecture smoke tests: 10 passed
-Tokenizer tests:           8 passed
-Total:                    18 passed
+Tokenizer tests:           9 passed
+Dataset tests:             5 passed
+Sampler tests:             3 passed
+Training tests:            8 passed
+Inference tests:           7 passed
+Readiness-gate tests:      3 passed
+Activation calibration:   3 passed
+MoE router tests:          6 passed
+Expert dispatch tests:     5 passed
+MoE integration tests:     6 passed
+Total:                    65 passed
 ```
 
 ## Architecture
@@ -66,8 +83,9 @@ This gives the project two important experimental properties:
 2. `CONTROL_PILOT` uses the same base architecture with state conditioning
    disabled, providing a clean comparison model.
 
-The current public implementation is dense. Mixture-of-experts routing remains
-a later experimental stage and should not be described as implemented.
+The trained checkpoint and default `PILOT` path remain dense. Sparse MoE
+mechanics are available only when `num_experts > 0`; the state prior has zero
+routing influence until the state-material readiness gate is cleared.
 
 ## PILOT configuration
 
@@ -85,8 +103,9 @@ a later experimental stage and should not be described as implemented.
 | Regulator dimensions | 11 |
 | Learned state latent | 16 |
 
-`config.py` also contains `SMALL` and `FULL` planning configurations. They are
-compute-ladder targets, not evidence that those models have been trained.
+`config.py` also contains an untrained 8-expert `MOE_PILOT` configuration and
+the `SMALL` and `FULL` planning configurations. They are compute-ladder targets,
+not evidence that those models have been trained.
 
 ## Why structured state instead of prompt text?
 
@@ -108,21 +127,35 @@ The 11 regulator values remain separate from the 171 emotion nodes so signals
 such as tension, coherence, sleep pressure and confidence cannot be mistaken
 for emotions.
 
+The v1 activation ceiling is frozen at `0.78`, the maximum positive score in
+59 genuine schema-compatible captures (205 active scores across 14 session
+logs). `activation_calibration.py` validates every state record and publishes
+only aggregate statistics and source digests; raw logs and conversation text
+remain outside Git. Training and readiness checks reject, rather than clip, a
+future score above the frozen ceiling.
+
 ## Repository guide
 
 | Path | Purpose |
 | --- | --- |
 | `NN.py` | Top-level `AuroraLM` model |
-| `config.py` | PILOT, SMALL, FULL and stateless control contracts |
+| `config.py` | Dense, MoE, compute-ladder and stateless control contracts |
 | `state_schema.py` | Canonical 171-dimensional state schema |
 | `state_encoder.py` | State compression and optional routing-prior head |
+| `activation_calibration.py` | Privacy-safe activation-ceiling calibration |
+| `calibration/activation_calibration_v1.json` | Frozen aggregate calibration receipt |
 | `transformer_block.py` | Pre-norm residual block with state conditioning |
+| `moe_router.py` | Bounded-state token router and routing losses |
+| `experts.py` | Sparse SwiGLU dispatch, capacity handling and telemetry |
 | `rotary_position_embedding.py` | RoPE and grouped-query attention |
 | `RSMnorm.py` | RMSNorm implementation |
 | `feetforward.py` | SwiGLU feed-forward layer |
 | `tokenizer.py` | Byte-level BPE training, loading and encoding CLI |
 | `test_smoke.py` | Ten model and architecture checks |
-| `test_tokenizer.py` | Eight tokenizer contract checks |
+| `test_tokenizer.py` | Nine tokenizer contract checks |
+| `test_moe_router.py` | Six router checks |
+| `test_experts.py` | Five sparse-dispatch checks |
+| `test_moe_integration.py` | Six end-to-end MoE compatibility checks |
 | `AuroraLM - State-Driven MoE Roadmap.txt` | Longer research roadmap |
 
 ## Quick start
@@ -157,14 +190,22 @@ python -m pip install -r requirements.txt
 ### 2. Run the verification suite
 
 ```bash
-python -m pytest test_smoke.py test_tokenizer.py -q
+python -m pytest -q
 ```
 
-The two files can also be run directly:
+The architecture and MoE suites can also be run without pytest:
 
 ```bash
 python test_smoke.py
-python test_tokenizer.py
+python -m unittest -q test_moe_router test_experts test_moe_integration
+```
+
+To regenerate the privacy-safe activation receipt from private Aurora logs:
+
+```bash
+python activation_calibration.py \
+  --sessions-dir /path/to/aurora/session_logs \
+  --output calibration/activation_calibration_v1.json
 ```
 
 ### 3. Run a model forward pass
@@ -266,7 +307,20 @@ Near-term public milestones:
 - gather genuine state-aligned turns;
 - calibrate the state activation ceiling;
 - run no-state, correct-state and shuffled-state ablations;
-- attempt MoE routing only if the dense PILOT produces useful evidence.
+- train or evaluate MoE routing only after the readiness gates authorise it.
+
+## License
+
+AuroraLM's original source code and documentation are copyright 2026 Omari
+Newman and licensed under the [Apache License 2.0](LICENSE). See
+[NOTICE](NOTICE) for attribution.
+
+Third-party libraries, datasets and generated artefacts retain their own terms.
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the current dependency,
+corpus and artefact scope. This repository does not release pretrained model
+weights.
+
+Citation metadata is available in [CITATION.cff](CITATION.cff).
 
 ## Author
 

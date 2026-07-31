@@ -103,8 +103,14 @@ class AuroraTokenizer:
     checkpoint-compatible artifact, and :meth:`load` everywhere else.
     """
 
-    def __init__(self, backend: Any):
+    def __init__(
+        self,
+        backend: Any,
+        *,
+        artifact_fingerprint: Optional[str] = None,
+    ):
         self._backend = backend
+        self._artifact_fingerprint = artifact_fingerprint
         self._validate_special_tokens()
 
     @classmethod
@@ -243,7 +249,10 @@ class AuroraTokenizer:
             )
 
         backend = Tokenizer.from_str(tokenizer_bytes.decode("utf-8"))
-        tokenizer = cls(backend)
+        tokenizer = cls(
+            backend,
+            artifact_fingerprint=expected_fingerprint,
+        )
 
         if tokenizer.vocab_size != metadata.get("vocab_size"):
             raise TokenizerError(
@@ -270,6 +279,8 @@ class AuroraTokenizer:
     @property
     def fingerprint(self) -> str:
         """Content hash saved with checkpoints to prevent tokenizer drift."""
+        if self._artifact_fingerprint is not None:
+            return self._artifact_fingerprint
         return _sha256_bytes(self._serialised_backend())
 
     def _serialised_backend(self) -> bytes:
@@ -404,13 +415,14 @@ class AuroraTokenizer:
         """Atomically save the standard tokenizer JSON and Aurora metadata."""
         directory = Path(directory)
         tokenizer_bytes = self._serialised_backend()
+        fingerprint = _sha256_bytes(tokenizer_bytes)
         metadata = {
             "format_version": TOKENIZER_FORMAT_VERSION,
             "model_type": "byte_level_bpe",
             "vocab_size": self.vocab_size,
             "special_token_ids": self.special_token_ids,
             "add_bos_eos": True,
-            "fingerprint": _sha256_bytes(tokenizer_bytes),
+            "fingerprint": fingerprint,
         }
         metadata_bytes = (
             json.dumps(metadata, indent=2, sort_keys=True) + "\n"
@@ -418,6 +430,7 @@ class AuroraTokenizer:
 
         _atomic_write(directory / TOKENIZER_FILENAME, tokenizer_bytes)
         _atomic_write(directory / METADATA_FILENAME, metadata_bytes)
+        self._artifact_fingerprint = fingerprint
 
     def validate_config(self, config: Any) -> None:
         """Refuse a model config whose embedding table cannot fit these IDs."""

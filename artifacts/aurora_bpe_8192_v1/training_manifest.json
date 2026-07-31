@@ -1,0 +1,42 @@
+{
+  "artifact_name": "aurora_bpe_8192_v1",
+  "created_at": "2026-07-27T14:16:33.6210824Z",
+  "format_version": 1,
+  "trainer": {
+    "implementation": "tokenizer.py",
+    "library": "tokenizers",
+    "library_version": "0.23.1",
+    "min_frequency": 2,
+    "vocab_size": 8192
+  },
+  "corpus": {
+    "path": "data/aurora_smollm_v1/tokenizer_corpus.txt",
+    "bytes": 40372316,
+    "sha256": "25959c4a90d001aec2dda51020f92f7545812c9be7cf30b365f4cd150ccdbb3b",
+    "train_texts": 10988,
+    "dataset_manifest_sha256": "789fb0510e23f38bb9ac4c5ff186b9d328b5f9d5d4f45abc5d4d6479fcef6fc0",
+    "smollm_sample_manifest_sha256": "142fefd1931d6cd2f93f3cdb92700dce3d90d86d41cdb33be1b98cadcc4486a0"
+  },
+  "artifact": {
+    "fingerprint": "45cc10034fb48082d8c997c25a18a6d15f00f4b7335a231a1acdcf282030f14e",
+    "tokenizer_json": {
+      "bytes": 554502,
+      "sha256": "45cc10034fb48082d8c997c25a18a6d15f00f4b7335a231a1acdcf282030f14e"
+    },
+    "tokenizer_config_json": {
+      "bytes": 283,
+      "sha256": "126cee167f12746f58e22e5f5fc9cdec2eaa4a3b170bb9237ad5a2a598b3c4cc"
+    }
+  },
+  "verification": {
+    "byte_for_byte_retraining": "pass",
+    "pilot_config_compatibility": "pass",
+    "special_token_ids": {
+      "<pad>": 0,
+      "<bos>": 1,
+      "<eos>": 2,
+      "<unk>": 3
+    },
+    "unicode_code_round_trip": "pass"
+  }
+}

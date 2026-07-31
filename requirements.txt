@@ -1,4 +1,9 @@
-# AuroraLM development and tests
+# AuroraLM runtime
+# Python 3.10+ is required by the source syntax and dataclass contracts.
 torch>=2.2,<3
 tokenizers>=0.21,<1
+numpy>=1.26,<3
+
+# Development and verification
+# Focused suites also support standard-library unittest execution.
 pytest>=8,<10

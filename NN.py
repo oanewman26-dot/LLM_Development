@@ -39,7 +39,8 @@ class AuroraLM(nn.Module):
         # State encoder: compresses 171-dim source state to block latents
         if config.state_size > 0:
             self.state_encoder = StateEncoder(
-                source_dim=171,
+                source_dim=config.source_state_dim,
+                regulator_dim=config.regulator_dim,
                 state_size=config.state_size,
                 hidden_dim=config.state_hidden_dim,
                 num_experts=config.num_experts,
@@ -63,7 +64,7 @@ class AuroraLM(nn.Module):
             bias=False
         )
 
-    def forward(self, tokens, aurora_state=None):
+    def forward(self, tokens, aurora_state=None, *, return_routing=False):
         """
         Args:
             tokens: (batch, seq) — token indices
@@ -71,20 +72,36 @@ class AuroraLM(nn.Module):
 
         Returns:
             logits: (batch, seq, vocab_size)
+            When return_routing=True, also returns one SparseMoEOutput per
+            MoE transformer block. Dense models return an empty tuple.
         """
         x = self.embedding(tokens)
 
         # Encode state once, broadcast latent to every block
         state_latent = None
+        routing_prior = None
         if self.state_encoder is not None and aurora_state is not None:
-            state_latent, _ = self.state_encoder(aurora_state)
+            state_latent, routing_prior = self.state_encoder(aurora_state)
 
+        routing_outputs = []
         for block in self.blocks:
-            x = block(x, state_latent)
+            if return_routing:
+                x, router_output = block(
+                    x,
+                    state_latent,
+                    routing_prior,
+                    return_router_output=True,
+                )
+                if router_output is not None:
+                    routing_outputs.append(router_output)
+            else:
+                x = block(x, state_latent, routing_prior)
 
         x = self.norm(x)
         logits = self.output(x)
 
+        if return_routing:
+            return logits, tuple(routing_outputs)
         return logits
 
     def count_parameters(self):

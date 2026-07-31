@@ -17,32 +17,173 @@ aurora_lm/
 |
 |-- RSMnorm.py                          done
 |-- feetforward.py                      done
-|-- rotary_position_embedding.py        verify before training
-|-- transformer_block.py      move into done
+|-- rotary_position_embedding.py        done (RoPE fix smoke-tested)
+|-- transformer_block.py                done
 |-- NN.py                               done
 |
 |-- config.py                           done
 |-- state_schema.py                     done
 |-- state_encoder.py                    done
-|-- moe_router.py                       later
-|-- experts.py                          later
-|-- tokenizer.py                        done (artifact waits for corpus mix)
-|-- train.py                            later
-|-- inference.py                        later
-|-- tests/test_smoke.py                 done
+|-- moe_router.py                       done (untrained top-k router)
+|-- experts.py                          done (causal sparse dispatch)
+|-- tokenizer.py                        done
+|-- dataset.py                          done (Aurora + SmolLM mixed v1)
+|-- smollm_sampler.py                   done (deterministic bounded sampler)
+|-- artifacts/aurora_bpe_8192_v1/       done (frozen tokenizer artifact)
+|-- train.py                            done (dense neutral-state PILOT stage)
+|-- inference.py                        done (strict base-model generation)
+|-- readiness_gate.py                   done (base + state-material go/no-go)
+|-- activation_calibration.py           done (privacy-safe frozen ceiling)
+|-- calibration/activation_calibration_v1.json
+|                                       done (aggregate receipt; raw logs private)
+|-- test_smoke.py                       done (10 tests)
+|-- test_tokenizer.py                   done (9 tests)
+|-- test_dataset.py                     done (5 tests)
+|-- test_smollm_sampler.py              done (3 tests)
+|-- test_train.py                       done (8 tests)
+|-- test_inference.py                   done (7 tests)
+|-- test_readiness_gate.py              done (3 tests)
+|-- test_activation_calibration.py      done (3 tests)
+|-- test_moe_router.py                  done (6 tests)
+|-- test_experts.py                     done (5 tests)
+|-- test_moe_integration.py             done (6 tests)
+|
+aurora_orchestrator/ (project 01)
+|
+|-- llm_interface.py                    done (model-agnostic adapter contract)
+|-- session_logger.py                   done (ODS/CSV + state-aligned JSONL)
+|-- test_session_logger.py              done (3 focused tests)
 ```
+
+The orchestrator now captures each processed turn as a lossless JSONL record:
+input, exact response or silence, regulators, scored active nodes, and the raw
+171-dimensional state vector. Aurora and AuroraLM use the same emotion ordering
+and schema fingerprint, and a captured record is accepted directly by
+`AuroraState171.from_record`.
+
+The session logger now emits the exact canonical 11-regulator vector in model
+order and validates every value against its configured range. Prediction bias,
+retrieval score, and the categorical PFC label remain available as separate
+telemetry rather than being mislabelled as model regulators. `dataset.py`
+revalidates the same exact contract before a turn can enter stateful training.
+
+`moe_router.py` and `experts.py` now provide the untrained MoE mechanics behind
+an optional 8-expert, top-2 `MOE_PILOT` configuration. Routing remains
+token-led; Aurora's state prior is accepted but has zero routing influence
+until Gate 2 is cleared. Expert capacity is isolated per sample and allocated
+in causal token order, with explicit overflow fallback so future tokens cannot
+change earlier outputs and no token silently loses its feed-forward branch.
+Dense SwiGLU weights can be cloned into every expert to preserve the dense
+function at MoE initialisation. Seventeen focused tests cover routing, dispatch,
+gradients, overflow, causal masking, dense equivalence and telemetry.
+
+`dataset.py` now builds deterministic, hashed train/validation data from
+explicitly allowlisted sources. It keeps clean documents, legacy unverified
+turns, and exact state-aligned turns in separate files; excludes embeddings,
+raw fragments, backups, live state, and Minecraft logs; and writes only beneath
+git-ignored data directories. The Aurora-only v1 build is preserved. The mixed
+`aurora_smollm_v1` build contains 10,787 deduplicated documents (9,664 train,
+1,123 validation), 903 quarantined legacy turns, and 10,988 train-split
+tokenizer texts. Verified stateful turns will accumulate as Aurora runs with
+the new recorder.
+
+`smollm_sampler.py` reproducibly samples the public
+`HuggingFaceTB/smollm-corpus` dataset at revision
+`3ba9d605774198c5868892d7a8deda78031a781f`. The bounded local sample contains
+7,500,398 FineWeb-Edu-Dedup tokens across 7,422 documents and 2,000,392
+Cosmopedia-v2 tokens across 2,489 documents. The sampler records selected row
+indices, content hashes, source metadata, and ODC-By attribution in its
+manifest; the downloaded data remains outside Git.
 
 `tokenizer.py` is a byte-level BPE implementation with an exact PILOT
 vocabulary contract (`vocab_size=8192`) and fixed special-token IDs:
 `<pad>=0`, `<bos>=1`, `<eos>=2`, `<unk>=3`. The full byte alphabet makes
-unseen UTF-8 text representable without unknown-token loss. Saved artifacts
-carry a fingerprint so training, inference, and checkpoints can reject
-tokenizer drift.
+unseen UTF-8 text representable without unknown-token loss.
 
-The final 8,192-token artifact should be trained once on a representative mix
-of the general pretraining corpus and Aurora's clean journal/memory text.
-Do not train it on raw JSON: embedding arrays and metadata would waste BPE
-merge capacity. The dataset builder should extract the text fields first.
+The final artifact has been trained once on the mixed corpus and frozen at
+`artifacts/aurora_bpe_8192_v1`. Its fingerprint is
+`45cc10034fb48082d8c997c25a18a6d15f00f4b7335a231a1acdcf282030f14e`.
+An independent retraining produced byte-for-byte identical tokenizer JSON.
+Training, inference, and checkpoints must load this artifact and reject any
+different fingerprint. Raw JSON, embedding arrays, and metadata remain
+excluded so they cannot consume BPE merge capacity.
+
+`train.py` now implements the dense PILOT language-pretraining stage with
+neutral state (`aurora_state=None`). It packs document tokens into overlapping
+512-token causal blocks, keeps the manifest-defined train/validation split,
+uses deterministic shuffled batches, cosine learning-rate decay with warmup,
+AdamW, gradient clipping, optional AMP, periodic validation, a live
+loss/throughput/ETA progress bar, verified checkpoint initialization for new
+optimization phases, and atomic checkpoint/resume. Checkpoints bind the full
+model configuration, runtime
+versions, tokenizer fingerprint, dataset hashes, state-schema fingerprint,
+packed-data statistics, optimiser/scaler state, sampler position, and RNG
+state. Legacy unverified turns and raw state data are not used in this stage.
+
+The complete mixed corpus packs into 19,216 train blocks from 9,838,809 tokens
+and 2,032 validation blocks from 1,040,605 tokens. An interrupted tiny training
+run resumed tensor-for-tensor identically to an uninterrupted run. A disposable
+one-step CPU run also passed through the real 9,994,960-parameter PILOT model,
+canonical tokenizer, canonical dataset, validation, and checkpoint writer.
+
+A real local CPU run, `pilot_dense_local_i5_v1`, completed on the i5-3470 in
+4 hours 33 minutes. It used batch size 4, 5,000 optimiser steps, three CPU
+threads, and approximately one pass over the packed training corpus. Validation
+loss fell continuously from 9.1772 to its best value of 5.1240; validation
+perplexity fell from 9,674 to 168. The final 107 MB checkpoint hash is verified,
+all 9,994,960 model values are finite, and the error log is empty.
+
+The second controlled base-pretraining phase,
+`pilot_dense_local_i5_phase2`, completed another 5,000 steps from that verified
+checkpoint with a fresh optimiser and a lower `1e-4` peak learning rate.
+Validation loss improved from 5.1240 to 4.9653 and perplexity from 168.01 to
+143.35. Improvement over the final five evaluations was only 0.00287, below
+the preregistered 0.01 plateau threshold. The final 107 MB checkpoint is
+verified at SHA-256
+`8056f7455845bae761625f81a42245f71b5ddd536584c3f583ca91bd69ffa787`.
+A checkpoint-contract regression confirms that the phase can resume without
+forgetting its initial checkpoint.
+
+`readiness_gate.py` is the hard interlock before state-conditioned work. Gate 1
+requires a completed candidate run, a non-regressing validation result, no
+material improvement over the final five evaluations, and a completed blinded
+semantic scorecard. Loss alone cannot approve the base. Gate 2 independently
+requires genuine exact-turn text/state pairs in both train and validation,
+multiple distinct 171-vectors, a manifest-matching state file, and a positive
+`ACTIVATION_CEILING` backed by a privacy-safe calibration receipt. The audit
+also verifies every candidate training state against the frozen ceiling without
+clipping. It never runs the correct-vs-shuffled ablation itself.
+
+The completed audit gives Gate 1 a quantitative pass: the run finished, beats
+the phase-one validation result, and meets the plateau criterion. Its formal
+status remains `PENDING` only because the blinded semantic scorecard is not
+complete. All 18 qualitative generations were produced; sampled and
+conservative decoding avoid most repetition, but inspection still shows weak
+prompt retention, clause coherence, factual stability, and code structure.
+The activation sub-gate is now calibrated from 59 genuine schema-compatible
+captures (205 positive node scores across 14 session logs). The maximum
+observed activation, `0.78`, is frozen with no silent clipping; its tracked
+aggregate receipt contains schema and source digests but no conversation text.
+Gate 2 remains `BLOCKED` because the canonical dataset still contains zero
+post-fix, 11-regulator state-aligned turns. Therefore state conditioning and
+the state ablation remain explicitly unauthorised; only dense base pretraining
+may proceed.
+
+`inference.py` now verifies the checkpoint pointer and SHA-256, runtime versions,
+model configuration, tokenizer fingerprint, state schema, tensor shapes, and
+finite weights before generation. It supports deterministic greedy, top-k, and
+nucleus sampling with temperature, repetition penalty, context truncation, and
+EOS handling. The qualitative harness records repetition metrics and can audit
+generated 16-word shingles against the training documents without reporting
+source text.
+
+At step 5,000, sampled continuations have recognisable English syntax but weak
+semantic and factual coherence. Greedy decoding collapses into repeated generic
+phrases, and the code probe fails as expected without coding data. Across 18
+sampled, greedy, and conservative generations, none of 388 exact 16-word
+shingles matched the training corpus. The model has learned a language signal
+but is not yet ready to serve as Aurora's voice; continue base pretraining and
+reevaluate before instruction or state-conditioned tuning.
 
 The standard transformer pieces are the useful foundation: RMSNorm, SwiGLU,
 RoPE, grouped-query attention, and residual blocks. They are not the research

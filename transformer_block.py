@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from rotary_position_embedding import GroupedQueryAttention
 from feetforward import SwiGLU
 from RSMnorm import RMSNorm
+from experts import SparseMoE
 
 
 class StateConditioner(nn.Module):
@@ -81,9 +82,16 @@ class TransformerBlock(nn.Module):
         self.attn_norm = RMSNorm(config.hidden_size)
         self.ffn_norm = RMSNorm(config.hidden_size)
 
-        # Attention + FFN
+        # Attention + dense or sparse FFN
         self.attn = GroupedQueryAttention(config)
-        self.ffn = SwiGLU(config)
+        self.is_moe = getattr(config, "num_experts", 0) > 0
+        if self.is_moe:
+            # State routing influence remains zero until the state-material
+            # readiness gate is cleared. The prior is still accepted so its
+            # zero contribution remains visible in the computation graph.
+            self.ffn = SparseMoE(config, state_prior_scale=0.0)
+        else:
+            self.ffn = SwiGLU(config)
 
         # State conditioners — one for each sublayer
         if self.state_size > 0:
@@ -93,14 +101,22 @@ class TransformerBlock(nn.Module):
             self.attn_cond = None
             self.ffn_cond = None
 
-    def forward(self, x, aurora_state=None):
+    def forward(
+        self,
+        x,
+        aurora_state=None,
+        routing_prior=None,
+        return_router_output=False,
+    ):
         """
         Args:
             x: (batch, seq, hidden_size)
             aurora_state: (batch, state_size) or None
+            routing_prior: (batch, num_experts) or None
+            return_router_output: include MoE routing/dispatch telemetry
 
         Returns:
-            x: (batch, seq, hidden_size)
+            x, or (x, SparseMoEOutput | None) when telemetry is requested
         """
         # --- Attention branch ---
         normed = self.attn_norm(x)
@@ -116,6 +132,15 @@ class TransformerBlock(nn.Module):
         if self.ffn_cond is not None:
             normed = self.ffn_cond(normed, aurora_state)
 
-        x = x + self.ffn(normed)
+        moe_output = None
+        if self.is_moe:
+            moe_output = self.ffn(normed, routing_prior)
+            ffn_output = moe_output.hidden_states
+        else:
+            ffn_output = self.ffn(normed)
 
+        x = x + ffn_output
+
+        if return_router_output:
+            return x, moe_output
         return x

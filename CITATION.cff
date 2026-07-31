@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use AuroraLM in research or software, please cite it using this metadata."
+title: "AuroraLM"
+type: software
+authors:
+  - family-names: "Newman"
+    given-names: "Omari"
+abstract: >-
+  An experimental decoder-only language model for controlled research into
+  structured cognitive-state conditioning and sparse mixture-of-experts
+  routing.
+license: Apache-2.0
+repository-code: "https://github.com/oanewman26-dot/LLM_Development"
+keywords:
+  - "language models"
+  - "mixture of experts"
+  - "state conditioning"
+  - "PyTorch"
+  - "reproducible research"
