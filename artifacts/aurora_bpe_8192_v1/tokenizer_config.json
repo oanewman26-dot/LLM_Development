@@ -1,0 +1,13 @@
+{
+  "add_bos_eos": true,
+  "fingerprint": "45cc10034fb48082d8c997c25a18a6d15f00f4b7335a231a1acdcf282030f14e",
+  "format_version": 1,
+  "model_type": "byte_level_bpe",
+  "special_token_ids": {
+    "<bos>": 1,
+    "<eos>": 2,
+    "<pad>": 0,
+    "<unk>": 3
+  },
+  "vocab_size": 8192
+}

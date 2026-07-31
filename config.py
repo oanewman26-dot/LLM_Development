@@ -54,10 +54,11 @@ STATE_RANGES: Dict[str, Tuple[float, float]] = {
 # A missing node means "did not fire", which is zero, not "unknown".
 STATE_DEFAULTS: Dict[str, float] = {name: 0.0 for name in STATE_DIMENSIONS}
 
-# Calibration ceiling used to normalise raw thalamic scores into 0..1.
-# Set this from a recorded calibration run and save it with the checkpoint.
-# None means "not yet calibrated" — training code should refuse to run.
-ACTIVATION_CEILING: float = None
+# Frozen from 59 genuine aurora-state-171/v1 captures using the maximum
+# observed positive activation with no clipping. The aggregate, privacy-safe
+# receipt is tracked at calibration/activation_calibration_v1.json. Any later
+# score above this value must fail closed and trigger explicit recalibration.
+ACTIVATION_CEILING: float = 0.78
 
 
 # ---------------------------------------------------------------------------
@@ -179,6 +180,15 @@ class AuroraLMConfig:
             self.hidden_size * self.intermediate_size * 2               # gate + up
             + self.intermediate_size * self.hidden_size                 # down
         )
+        if self.num_experts > 0:
+            # One independent SwiGLU per expert plus the token router.
+            ffn_block = (
+                self.num_experts * ffn
+                + self.hidden_size * self.num_experts
+                + self.num_experts
+            )
+        else:
+            ffn_block = ffn
 
         # State conditioners per block (2 per block: attn + ffn)
         if self.state_size > 0:
@@ -196,6 +206,7 @@ class AuroraLMConfig:
 
         # Output head
         head = self.hidden_size * self.vocab_size
+        final_norm = self.hidden_size
 
         # State encoder (if enabled)
         if self.state_size > 0:
@@ -213,7 +224,8 @@ class AuroraLMConfig:
 
         total = (
             embed
-            + self.num_layers * (attn + ffn + norms + cond_total)
+            + self.num_layers * (attn + ffn_block + norms + cond_total)
+            + final_norm
             + head
             + state_enc
         )
@@ -238,6 +250,16 @@ PILOT = AuroraLMConfig(
     num_experts=0,
     batch_size=32,
     max_steps=10_000,
+)
+
+MOE_PILOT = AuroraLMConfig(
+    **{
+        **PILOT.__dict__,
+        "name": "moe_pilot",
+        "num_experts": 8,
+        "top_k_experts": 2,
+        "expert_capacity_factor": 1.0,
+    }
 )
 
 SMALL = AuroraLMConfig(

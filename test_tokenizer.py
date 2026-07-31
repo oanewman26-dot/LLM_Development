@@ -1,3 +1,5 @@
+import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -119,6 +121,30 @@ class TestAuroraTokenizer(unittest.TestCase):
                 "fingerprint mismatch",
             ):
                 AuroraTokenizer.load(temporary)
+
+    def test_loaded_fingerprint_is_hash_of_artifact_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            self.tokenizer.save(temporary)
+            tokenizer_path = Path(temporary) / "tokenizer.json"
+            metadata_path = Path(temporary) / "tokenizer_config.json"
+
+            compact_bytes = json.dumps(
+                json.loads(tokenizer_path.read_text(encoding="utf-8")),
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+            tokenizer_path.write_bytes(compact_bytes)
+
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            artifact_fingerprint = hashlib.sha256(compact_bytes).hexdigest()
+            metadata["fingerprint"] = artifact_fingerprint
+            metadata_path.write_text(
+                json.dumps(metadata, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+
+            loaded = AuroraTokenizer.load(temporary)
+            self.assertEqual(loaded.fingerprint, artifact_fingerprint)
 
     def test_model_config_must_match(self):
         matching = SimpleNamespace(vocab_size=320, context_length=512)

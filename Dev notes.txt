@@ -1,4 +1,8 @@
 AuroraLM — Development Session Log
+Historical snapshot: this 2026-07-24 note is preserved to show the project's
+development path. Its 9/10 test result is not current; see README.md and the
+roadmap for the current verified status.
+
 Date: 2026-07-24
 Status: Smoke tests operational, 9/10 passing. One known edge-case test pending resolution.
 Files Built or Fixed Today
