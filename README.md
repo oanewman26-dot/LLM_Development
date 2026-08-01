@@ -58,6 +58,30 @@ MoE integration tests:     6 passed
 Total:                    65 passed
 ```
 
+## Verified development status — 2026-08-01
+
+- The public AuroraLM suite passes all 65 tests.
+- Aurora's private suite passes all 109 tests on local checkpoint `741ce9c`.
+  That checkpoint contains the exact 11-regulator logger change and has not
+  yet been merged into Aurora's `dev` branch or pushed.
+- Aurora and AuroraLM have an exact cross-repository match for all 171 emotion
+  dimensions, the state-schema fingerprint, and all 11 regulator names and
+  ranges.
+- The phase-two checkpoint contains 9,994,960 finite parameters and verifies
+  at SHA-256
+  `8056f7455845bae761625f81a42245f71b5ddd536584c3f583ca91bd69ffa787`.
+- Eighteen phase-two qualitative generations produce 412 distinct candidate
+  16-word shingles; none match the canonical training documents exactly.
+- A private recovery audit restored 96 historical files byte-for-byte into a
+  git-ignored local packet without changing either live worktree. Recovered
+  journals, memories, vault data and runtime logs remain private and outside
+  this repository.
+- Gate 1 remains `PENDING` because the blinded semantic scorecard is
+  incomplete. Gate 2 remains `BLOCKED` because the canonical dataset still has
+  zero post-fix exact state-aligned turns. State-conditioned training, the
+  correct/no-state/shuffled-state ablation, and state-influenced MoE routing
+  remain unauthorised.
+
 ## Architecture
 
 ```mermaid

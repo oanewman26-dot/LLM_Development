@@ -51,8 +51,9 @@ aurora_lm/
 aurora_orchestrator/ (project 01)
 |
 |-- llm_interface.py                    done (model-agnostic adapter contract)
-|-- session_logger.py                   done (ODS/CSV + state-aligned JSONL)
-|-- test_session_logger.py              done (3 focused tests)
+|-- agent.py                            done (exact regulator capture at local checkpoint)
+|-- session_logger.py                   done (ODS/CSV + state-aligned JSONL at local checkpoint)
+|-- test_recovery.py                    done (2 focused Gate 2/logger contract tests)
 ```
 
 The orchestrator now captures each processed turn as a lossless JSONL record:
@@ -66,6 +67,13 @@ order and validates every value against its configured range. Prediction bias,
 retrieval score, and the categorical PFC label remain available as separate
 telemetry rather than being mislabelled as model regulators. `dataset.py`
 revalidates the same exact contract before a turn can enter stateful training.
+
+The three-file orchestrator change is verified on the local-only Aurora
+checkpoint `741ce9c` (`agent.py`, `session_logger.py`, and `test_recovery.py`).
+Aurora's documented private Python suite passes all 109 tests at that
+checkpoint. The checkpoint has not yet been merged into `dev` or pushed, so
+the mechanism is complete and tested locally while repository integration
+remains pending.
 
 `moe_router.py` and `experts.py` now provide the untrained MoE mechanics behind
 an optional 8-expert, top-2 `MOE_PILOT` configuration. Routing remains
@@ -180,10 +188,18 @@ source text.
 At step 5,000, sampled continuations have recognisable English syntax but weak
 semantic and factual coherence. Greedy decoding collapses into repeated generic
 phrases, and the code probe fails as expected without coding data. Across 18
-sampled, greedy, and conservative generations, none of 388 exact 16-word
-shingles matched the training corpus. The model has learned a language signal
-but is not yet ready to serve as Aurora's voice; continue base pretraining and
-reevaluate before instruction or state-conditioned tuning.
+sampled, greedy, and conservative generations, none of 412 exact 16-word
+candidate shingles matched the training corpus. The model has learned a
+language signal but is not yet ready to serve as Aurora's voice; continue base
+pretraining and reevaluate before instruction or state-conditioned tuning.
+
+The 2026-08-01 recovery audit extracted 96 historical files (68,600,657 bytes)
+into a private, git-ignored recovery packet without changing either live
+worktree. All 96 files match their original Git blobs and all 96 SHA-256
+checks pass. Historical vault, journal, memory, and runtime-log material remains
+local and outside the public repository. The superseded `dream.py` and obsolete
+`smoke_tests.odt` are not restoration targets. Recovery preserves history; it
+does not create post-fix state-aligned turns or change either readiness gate.
 
 The standard transformer pieces are the useful foundation: RMSNorm, SwiGLU,
 RoPE, grouped-query attention, and residual blocks. They are not the research
