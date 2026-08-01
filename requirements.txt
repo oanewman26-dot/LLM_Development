@@ -6,4 +6,4 @@ numpy>=1.26,<3
 
 # Development and verification
 # Focused suites also support standard-library unittest execution.
-pytest>=8,<10
+pytest>=9.1.1,<10
