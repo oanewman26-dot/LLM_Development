@@ -1,6 +1,6 @@
 # AuroraLM runtime
 # Python 3.10+ is required by the source syntax and dataclass contracts.
-torch>=2.2,<3
+torch>=2.13.0,<3
 tokenizers>=0.23.1,<1
 numpy>=2.5.1,<3
 
