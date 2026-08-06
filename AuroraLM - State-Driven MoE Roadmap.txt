@@ -69,11 +69,9 @@ telemetry rather than being mislabelled as model regulators. `dataset.py`
 revalidates the same exact contract before a turn can enter stateful training.
 
 The three-file orchestrator change is verified on the local-only Aurora
-checkpoint `741ce9c` (`agent.py`, `session_logger.py`, and `test_recovery.py`).
-Aurora's documented private Python suite passes all 109 tests at that
-checkpoint. The checkpoint has not yet been merged into `dev` or pushed, so
-the mechanism is complete and tested locally while repository integration
-remains pending.
+checkpoint `45d71a7` (`agent.py`, `session_logger.py`, and `test_recovery.py`).
+Aurora's documented private Python suite passes all 200+ tests at that
+checkpoint. The checkpoint is on `main` and pushed to `origin/main`.
 
 `moe_router.py` and `experts.py` now provide the untrained MoE mechanics behind
 an optional 8-expert, top-2 `MOE_PILOT` configuration. Routing remains
