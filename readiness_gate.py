@@ -34,7 +34,7 @@ AUDIT_FORMAT_VERSION = 1
 DEFAULT_CALIBRATION_MANIFEST = (
     Path(__file__).resolve().parent
     / "calibration"
-    / "activation_calibration_v1.json"
+    / "activation_calibration_v2.json"
 )
 SCORECARD_FORMAT_VERSION = 1
 RECENT_EVALUATIONS = 5

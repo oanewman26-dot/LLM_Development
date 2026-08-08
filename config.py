@@ -54,11 +54,11 @@ STATE_RANGES: Dict[str, Tuple[float, float]] = {
 # A missing node means "did not fire", which is zero, not "unknown".
 STATE_DEFAULTS: Dict[str, float] = {name: 0.0 for name in STATE_DIMENSIONS}
 
-# Frozen from 59 genuine aurora-state-171/v1 captures using the maximum
-# observed positive activation with no clipping. The aggregate, privacy-safe
-# receipt is tracked at calibration/activation_calibration_v1.json. Any later
-# score above this value must fail closed and trigger explicit recalibration.
-ACTIVATION_CEILING: float = 0.78
+# Frozen from a privacy-safe aggregate calibration using the maximum observed
+# positive activation with no clipping. The public receipt is tracked at
+# calibration/activation_calibration_v2.json. Any later score above this value
+# must fail closed and trigger explicit recalibration.
+ACTIVATION_CEILING: float = 0.88
 
 
 # ---------------------------------------------------------------------------
