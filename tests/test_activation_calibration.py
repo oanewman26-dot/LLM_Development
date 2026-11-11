@@ -3,13 +3,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from activation_calibration import (
+from auroralm.activation_calibration import (
     CALIBRATION_METHOD,
     CalibrationError,
     calibrate_session_logs,
     write_calibration,
 )
-from state_schema import (
+from auroralm.state_schema import (
     EMOTION_COUNT,
     SCHEMA_FINGERPRINT,
     SCHEMA_VERSION,

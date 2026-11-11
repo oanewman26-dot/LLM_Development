@@ -162,24 +162,24 @@ future score above the frozen ceiling.
 
 | Path | Purpose |
 | --- | --- |
-| `NN.py` | Top-level `AuroraLM` model |
-| `config.py` | Dense, MoE, compute-ladder and stateless control contracts |
-| `state_schema.py` | Canonical 171-dimensional state schema |
-| `state_encoder.py` | State compression and optional routing-prior head |
-| `activation_calibration.py` | Privacy-safe activation-ceiling calibration |
+| `src/auroralm/NN.py` | Top-level `AuroraLM` model |
+| `src/auroralm/config.py` | Dense, MoE, compute-ladder and stateless control contracts |
+| `src/auroralm/state_schema.py` | Canonical 171-dimensional state schema |
+| `src/auroralm/state_encoder.py` | State compression and optional routing-prior head |
+| `src/auroralm/activation_calibration.py` | Privacy-safe activation-ceiling calibration |
 | `calibration/activation_calibration_v1.json` | Frozen aggregate calibration receipt |
-| `transformer_block.py` | Pre-norm residual block with state conditioning |
-| `moe_router.py` | Bounded-state token router and routing losses |
-| `experts.py` | Sparse SwiGLU dispatch, capacity handling and telemetry |
-| `rotary_position_embedding.py` | RoPE and grouped-query attention |
-| `RSMnorm.py` | RMSNorm implementation |
-| `feetforward.py` | SwiGLU feed-forward layer |
-| `tokenizer.py` | Byte-level BPE training, loading and encoding CLI |
-| `test_smoke.py` | Ten model and architecture checks |
-| `test_tokenizer.py` | Nine tokenizer contract checks |
-| `test_moe_router.py` | Six router checks |
-| `test_experts.py` | Five sparse-dispatch checks |
-| `test_moe_integration.py` | Six end-to-end MoE compatibility checks |
+| `src/auroralm/transformer_block.py` | Pre-norm residual block with state conditioning |
+| `src/auroralm/moe_router.py` | Bounded-state token router and routing losses |
+| `src/auroralm/experts.py` | Sparse SwiGLU dispatch, capacity handling and telemetry |
+| `src/auroralm/rotary_position_embedding.py` | RoPE and grouped-query attention |
+| `src/auroralm/RSMnorm.py` | RMSNorm implementation |
+| `src/auroralm/feetforward.py` | SwiGLU feed-forward layer |
+| `src/auroralm/tokenizer.py` | Byte-level BPE training, loading and encoding CLI |
+| `tests/test_smoke.py` | Ten model and architecture checks |
+| `tests/test_tokenizer.py` | Nine tokenizer contract checks |
+| `tests/test_moe_router.py` | Six router checks |
+| `tests/test_experts.py` | Five sparse-dispatch checks |
+| `tests/test_moe_integration.py` | Six end-to-end MoE compatibility checks |
 | `docs/AuroraLM - State-Driven MoE Roadmap.txt` | Longer research roadmap |
 
 ## Quick start
@@ -209,7 +209,11 @@ Install the development dependencies:
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m pip install -e . --no-deps
 ```
+
+The source lives in `src/auroralm/`; the editable install makes the
+`auroralm` package importable from anywhere in the environment.
 
 ### 2. Run the verification suite
 
@@ -220,14 +224,15 @@ python -m pytest -q
 The architecture and MoE suites can also be run without pytest:
 
 ```bash
-python test_smoke.py
-python -m unittest -q test_moe_router test_experts test_moe_integration
+python tests/test_smoke.py
+python -m unittest discover -s tests -p "test_moe*.py" -q
+python -m unittest discover -s tests -p "test_experts.py" -q
 ```
 
 To regenerate the privacy-safe activation receipt from private Aurora logs:
 
 ```bash
-python activation_calibration.py \
+python -m auroralm.activation_calibration \
   --sessions-dir /path/to/aurora/session_logs \
   --output calibration/activation_calibration_v1.json
 ```
@@ -237,8 +242,8 @@ python activation_calibration.py \
 ```python
 import torch
 
-from config import PILOT
-from NN import AuroraLM
+from auroralm.config import PILOT
+from auroralm.NN import AuroraLM
 
 model = AuroraLM(PILOT)
 tokens = torch.randint(0, PILOT.vocab_size, (2, 32))
@@ -258,7 +263,7 @@ language generation.
 Train an 8,192-token byte-level BPE tokenizer from clean UTF-8 text:
 
 ```bash
-python tokenizer.py train \
+python -m auroralm.tokenizer train \
   --input corpus.txt \
   --output artifacts/aurora_bpe_8192_v1 \
   --vocab-size 8192 \
@@ -268,13 +273,13 @@ python tokenizer.py train \
 Inspect a saved artefact:
 
 ```bash
-python tokenizer.py inspect artifacts/aurora_bpe_8192_v1
+python -m auroralm.tokenizer inspect artifacts/aurora_bpe_8192_v1
 ```
 
 Encode a short string:
 
 ```bash
-python tokenizer.py encode artifacts/aurora_bpe_8192_v1 "Aurora notices the change."
+python -m auroralm.tokenizer encode artifacts/aurora_bpe_8192_v1 "Aurora notices the change."
 ```
 
 Training corpora, private journals, checkpoints and generated artefacts should

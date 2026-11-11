@@ -7,9 +7,9 @@ from pathlib import Path
 
 import torch
 
-from config import AuroraLMConfig
-from tokenizer import AuroraTokenizer
-from train import (
+from auroralm.config import AuroraLMConfig
+from auroralm.tokenizer import AuroraTokenizer
+from auroralm.train import (
     ContractError,
     DeterministicBatchSampler,
     TrainingSettings,

@@ -3,9 +3,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from config import REGULATOR_NAMES
-from dataset import DatasetError, prepare_dataset, write_dataset
-from state_schema import (
+from auroralm.config import REGULATOR_NAMES
+from auroralm.dataset import DatasetError, prepare_dataset, write_dataset
+from auroralm.state_schema import (
     EMOTION_COUNT,
     SCHEMA_FINGERPRINT,
     SCHEMA_VERSION,

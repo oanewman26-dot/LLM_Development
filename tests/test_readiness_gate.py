@@ -4,15 +4,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from activation_calibration import (
+from auroralm.activation_calibration import (
     CALIBRATION_FORMAT_VERSION,
     CALIBRATION_METHOD,
 )
-from readiness_gate import (
+from auroralm.readiness_gate import (
     evaluate_base_gate,
     evaluate_state_material_gate,
 )
-from state_schema import (
+from auroralm.state_schema import (
     EMOTION_COUNT,
     SCHEMA_FINGERPRINT,
     SCHEMA_VERSION,

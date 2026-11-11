@@ -3,8 +3,8 @@ from types import SimpleNamespace
 
 import torch
 
-from experts import ExpertPool, SparseMoE
-from feetforward import SwiGLU
+from auroralm.experts import ExpertPool, SparseMoE
+from auroralm.feetforward import SwiGLU
 
 
 def tiny_moe_config(**overrides):

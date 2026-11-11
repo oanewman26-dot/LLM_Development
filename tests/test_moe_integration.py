@@ -2,9 +2,9 @@ import unittest
 
 import torch
 
-from config import AuroraLMConfig
-from NN import AuroraLM
-from transformer_block import TransformerBlock
+from auroralm.config import AuroraLMConfig
+from auroralm.NN import AuroraLM
+from auroralm.transformer_block import TransformerBlock
 
 
 def tiny_config(*, num_experts):

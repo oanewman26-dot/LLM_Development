@@ -22,10 +22,10 @@ from typing import Any, Iterable, Mapping, Optional, Sequence
 
 import torch
 
-from config import AuroraLMConfig
-from NN import AuroraLM
-from state_schema import SCHEMA_FINGERPRINT, SCHEMA_VERSION
-from tokenizer import (
+from auroralm.config import AuroraLMConfig
+from auroralm.NN import AuroraLM
+from auroralm.state_schema import SCHEMA_FINGERPRINT, SCHEMA_VERSION
+from auroralm.tokenizer import (
     BOS_TOKEN_ID,
     EOS_TOKEN_ID,
     PAD_TOKEN_ID,

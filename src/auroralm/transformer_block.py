@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from rotary_position_embedding import GroupedQueryAttention
-from feetforward import SwiGLU
-from RSMnorm import RMSNorm
-from experts import SparseMoE
+from auroralm.rotary_position_embedding import GroupedQueryAttention
+from auroralm.feetforward import SwiGLU
+from auroralm.RSMnorm import RMSNorm
+from auroralm.experts import SparseMoE
 
 
 class StateConditioner(nn.Module):

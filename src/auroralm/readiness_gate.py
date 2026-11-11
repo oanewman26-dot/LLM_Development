@@ -18,12 +18,12 @@ from pathlib import Path
 from statistics import mean
 from typing import Any, Mapping, Optional
 
-from activation_calibration import (
+from auroralm.activation_calibration import (
     CALIBRATION_FORMAT_VERSION,
     CALIBRATION_METHOD,
 )
-from config import ACTIVATION_CEILING
-from state_schema import (
+from auroralm.config import ACTIVATION_CEILING
+from auroralm.state_schema import (
     AuroraState171,
     SCHEMA_FINGERPRINT,
     SCHEMA_VERSION,
@@ -32,7 +32,8 @@ from state_schema import (
 
 AUDIT_FORMAT_VERSION = 1
 DEFAULT_CALIBRATION_MANIFEST = (
-    Path(__file__).resolve().parent
+    # src/auroralm/ -> project root, where calibration/ is versioned.
+    Path(__file__).resolve().parents[2]
     / "calibration"
     / "activation_calibration_v2.json"
 )
