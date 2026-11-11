@@ -180,7 +180,7 @@ future score above the frozen ceiling.
 | `test_moe_router.py` | Six router checks |
 | `test_experts.py` | Five sparse-dispatch checks |
 | `test_moe_integration.py` | Six end-to-end MoE compatibility checks |
-| `AuroraLM - State-Driven MoE Roadmap.txt` | Longer research roadmap |
+| `docs/AuroraLM - State-Driven MoE Roadmap.txt` | Longer research roadmap |
 
 ## Quick start
 
@@ -320,7 +320,7 @@ clear go/no-go gates over premature claims.
 ## Roadmap
 
 The longer technical plan is available in
-[AuroraLM - State-Driven MoE Roadmap](./AuroraLM%20-%20State-Driven%20MoE%20Roadmap.txt).
+[AuroraLM - State-Driven MoE Roadmap](./docs/AuroraLM%20-%20State-Driven%20MoE%20Roadmap.txt).
 
 Near-term public milestones:
 
