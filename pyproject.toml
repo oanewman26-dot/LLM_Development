@@ -15,5 +15,22 @@ license = { text = "Apache-2.0" }
 where = ["src"]
 
 [tool.pytest.ini_options]
+minversion = "8.0"
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = ["--strict-markers", "--strict-config"]
+markers = [
+    "slow: takes several seconds on CPU; deselect with -m 'not slow'",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["auroralm"]
+
+[tool.coverage.report]
+skip_covered = true
+exclude_also = [
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
