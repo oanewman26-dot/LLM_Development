@@ -16,12 +16,12 @@ import hashlib
 import json
 import math
 import os
+from collections.abc import Iterable, Sequence
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any
 
-from auroralm.state_schema import AuroraState171, SCHEMA_FINGERPRINT, SCHEMA_VERSION
-
+from auroralm.state_schema import SCHEMA_FINGERPRINT, SCHEMA_VERSION, AuroraState171
 
 CALIBRATION_FORMAT_VERSION = 1
 DEFAULT_SESSION_GLOB = "aurora_training_*.jsonl"

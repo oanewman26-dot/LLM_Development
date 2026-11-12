@@ -1,0 +1,50 @@
+# Local quality gate, shared with the Aurora repository (its
+# docs/REPO_ALIGNMENT_PLAN.md, Phase 4).
+#
+# The hooks run the tools listed in requirements.txt from the active
+# virtual environment, so a commit is checked by the same versions as CI.
+# Install once per clone:
+#
+#     python -m pip install -r requirements.txt
+#     python -m pre_commit install
+#
+# Formatting, lint, type check and byte-compilation run on every commit; the
+# test suite runs before a push.
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: ruff format
+        entry: python -m ruff format --force-exclude
+        language: system
+        files: \.pyi?$
+
+      - id: ruff-check
+        name: ruff check
+        # Reports only; fix findings by hand or with `ruff check --fix`.
+        entry: python -m ruff check --force-exclude
+        language: system
+        files: \.pyi?$
+
+      - id: mypy
+        name: mypy
+        entry: python -m mypy
+        language: system
+        files: \.pyi?$
+        pass_filenames: false
+
+      - id: compileall
+        name: compile python sources
+        entry: python -m compileall -q
+        language: system
+        files: \.pyi?$
+
+      - id: pytest
+        name: pytest
+        entry: python -m pytest -q
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

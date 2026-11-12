@@ -12,13 +12,13 @@ import argparse
 import hashlib
 import importlib.metadata
 import json
-import math
 import re
 import sys
 import time
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Optional, Sequence
+from typing import Any
 
 import torch
 
@@ -32,7 +32,6 @@ from auroralm.tokenizer import (
     UNK_TOKEN_ID,
     AuroraTokenizer,
 )
-
 
 INFERENCE_FORMAT_VERSION = 1
 SUPPORTED_CHECKPOINT_FORMAT_VERSION = 1
@@ -142,7 +141,7 @@ def resolve_device(requested: str) -> torch.device:
     return torch.device(requested)
 
 
-def resolve_checkpoint(path: Path) -> tuple[Path, Optional[str]]:
+def resolve_checkpoint(path: Path) -> tuple[Path, str | None]:
     path = Path(path)
     if path.is_dir():
         latest_path = path / "latest.json"
@@ -481,10 +480,10 @@ def audit_exact_shingles(
             if not line.strip():
                 continue
             record = json.loads(line)
-            text = record.get("text") if isinstance(record, dict) else None
-            if not isinstance(text, str):
+            document = record.get("text") if isinstance(record, dict) else None
+            if not isinstance(document, str):
                 continue
-            words = _normalised_words(text)
+            words = _normalised_words(document)
             document_shingles = {
                 tuple(words[index : index + shingle_words])
                 for index in range(len(words) - shingle_words + 1)
@@ -504,7 +503,7 @@ def run_qualitative_suite(
     prompts: Sequence[Mapping[str, str]],
     settings: GenerationSettings,
     *,
-    audit_documents: Optional[Path] = None,
+    audit_documents: Path | None = None,
 ) -> dict[str, Any]:
     results = []
     for index, item in enumerate(prompts):
@@ -610,7 +609,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     device = resolve_device(args.device)
     session = load_inference_session(

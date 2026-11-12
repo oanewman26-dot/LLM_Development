@@ -15,7 +15,6 @@ from auroralm.tokenizer import (
     TokenizerError,
 )
 
-
 TRAINING_TEXTS = [
     "Aurora notices tension, coherence, novelty, and salience.\n",
     "She remembers Omari's words and considers what they mean.\n",

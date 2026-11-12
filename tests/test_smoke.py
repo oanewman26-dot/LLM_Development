@@ -10,8 +10,8 @@ Run with:
 All tests must pass before cloud compute is authorised.
 """
 
-import sys
 import os
+import sys
 
 # Allow imports from src/ regardless of where the file is invoked from
 sys.path.insert(
@@ -22,9 +22,8 @@ sys.path.insert(
 import torch
 import torch.nn.functional as F
 
-from auroralm.config import PILOT, CONTROL_PILOT, STATE_SCHEMA_VERSION
+from auroralm.config import CONTROL_PILOT, PILOT, STATE_SCHEMA_VERSION
 from auroralm.NN import AuroraLM
-
 
 # ---------------------------------------------------------------------------
 # Fixture: pinned seed and device
@@ -60,13 +59,16 @@ def dummy_batch(config, batch_size=2, seq_len=16):
 
 def test_imports():
     """All core modules import without error."""
-    from auroralm import config
-    from auroralm import NN
-    from auroralm import transformer_block
-    from auroralm import rotary_position_embedding
-    from auroralm import feetforward
-    from auroralm import RSMnorm
-    from auroralm import state_encoder
+    # Importing each module is the test.
+    from auroralm import (  # noqa: F401
+        NN,
+        RSMnorm,
+        config,
+        feetforward,
+        rotary_position_embedding,
+        state_encoder,
+        transformer_block,
+    )
 
     assert config.STATE_SCHEMA_VERSION == STATE_SCHEMA_VERSION
 

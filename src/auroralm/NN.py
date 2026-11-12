@@ -1,10 +1,9 @@
-import torch
 import torch.nn as nn
 
 from auroralm.config import AuroraLMConfig
 from auroralm.RSMnorm import RMSNorm
-from auroralm.transformer_block import TransformerBlock
 from auroralm.state_encoder import StateEncoder
+from auroralm.transformer_block import TransformerBlock
 
 
 class AuroraLM(nn.Module):
@@ -35,7 +34,7 @@ class AuroraLM(nn.Module):
 
         # State encoder: compresses 171-dim source state to block latents
         if config.state_size > 0:
-            self.state_encoder = StateEncoder(
+            self.state_encoder: StateEncoder | None = StateEncoder(
                 source_dim=config.source_state_dim,
                 regulator_dim=config.regulator_dim,
                 state_size=config.state_size,

@@ -63,7 +63,7 @@ class ExpertPool(nn.Module):
             raise ValueError("ExpertPool requires config.context_length >= 1.")
         self.experts = nn.ModuleList(SwiGLU(config) for _ in range(self.num_experts))
 
-    def copy_dense_weights_(self, dense_ffn: SwiGLU) -> "ExpertPool":
+    def copy_dense_weights_(self, dense_ffn: SwiGLU) -> ExpertPool:
         """Clone one dense SwiGLU into every expert for function-preserving init."""
         dense_state = dense_ffn.state_dict()
         for expert in self.experts:
@@ -234,7 +234,7 @@ class SparseMoE(nn.Module):
         )
         self.expert_pool = ExpertPool(config)
 
-    def copy_dense_weights_(self, dense_ffn: SwiGLU) -> "SparseMoE":
+    def copy_dense_weights_(self, dense_ffn: SwiGLU) -> SparseMoE:
         self.expert_pool.copy_dense_weights_(dense_ffn)
         return self
 

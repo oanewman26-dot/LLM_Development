@@ -14,12 +14,12 @@ training and inference.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
 from math import isfinite
-from typing import Any, Iterable, Mapping, Sequence
-
+from typing import Any
 
 SCHEMA_VERSION = "aurora-state-171/v1"
 
@@ -275,7 +275,7 @@ class AuroraState171:
         *,
         captured_at: str | None = None,
         source: str = "thalamus",
-    ) -> "AuroraState171":
+    ) -> AuroraState171:
         """Return an explicit no-node-fired state, not a missing state."""
         return cls(
             values=(0.0,) * EMOTION_COUNT,
@@ -291,7 +291,7 @@ class AuroraState171:
         captured_at: str | None = None,
         source: str = "thalamus",
         strict: bool = True,
-    ) -> "AuroraState171":
+    ) -> AuroraState171:
         """Build a dense vector from ``{emotion_name: activation}`` pairs."""
         unknown = set(activations).difference(EMOTION_INDEX)
         if strict and unknown:
@@ -319,7 +319,7 @@ class AuroraState171:
         captured_at: str | None = None,
         source: str = "thalamus",
         strict: bool = True,
-    ) -> "AuroraState171":
+    ) -> AuroraState171:
         """Adapt Aurora's ``[(EmotionNode, activation_score), ...]`` output.
 
         If a node appears twice, the strongest score wins.  That preserves the
@@ -410,7 +410,7 @@ class AuroraState171:
         }
 
     @classmethod
-    def from_record(cls, record: Mapping[str, Any]) -> "AuroraState171":
+    def from_record(cls, record: Mapping[str, Any]) -> AuroraState171:
         """Load a serialised state and reject incompatible vector orders."""
         version = record.get("schema_version")
         fingerprint = record.get("schema_fingerprint")

@@ -18,13 +18,13 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any
 
 from auroralm.dataset import clean_text, text_fingerprint
-
 
 DATASET_ID = "HuggingFaceTB/smollm-corpus"
 DATASET_API = f"https://huggingface.co/api/datasets/{DATASET_ID}"
@@ -66,7 +66,7 @@ def _fetch_json(url: str, *, attempts: int = 12, timeout: int = 60) -> Any:
             if exc.code == 429:
                 retry_after = exc.headers.get("Retry-After")
                 try:
-                    delay = max(delay, float(retry_after))
+                    delay = max(delay, float(retry_after))  # type: ignore[arg-type]  # None is rejected by the except below
                 except (TypeError, ValueError):
                     delay = max(delay, 30.0)
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
@@ -144,7 +144,7 @@ def _row_text_and_tokens(
         score = metadata.get("int_score")
         if spec.minimum_score is not None:
             try:
-                if int(score) < spec.minimum_score:
+                if int(score) < spec.minimum_score:  # type: ignore[arg-type]  # None is rejected by the except below
                     return None
             except (TypeError, ValueError) as exc:
                 raise SamplerError("FineWeb-Edu row has invalid int_score") from exc
@@ -167,7 +167,7 @@ def _row_text_and_tokens(
         raise SamplerError(f"Unsupported SmolLM config {spec.config!r}")
 
     try:
-        token_count = int(raw_tokens)
+        token_count = int(raw_tokens)  # type: ignore[arg-type]  # None is rejected by the except below
     except (TypeError, ValueError) as exc:
         raise SamplerError(f"{spec.config} row has no valid token count") from exc
     if token_count < 1:

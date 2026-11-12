@@ -27,6 +27,7 @@ REQUIRED_FILES = (
     ".github/workflows/ci.yml",
     ".github/dependabot.yml",
     "pyproject.toml",
+    ".pre-commit-config.yaml",
     "conftest.py",
     "requirements.txt",
     "src/auroralm/__init__.py",

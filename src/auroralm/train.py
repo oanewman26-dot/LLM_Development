@@ -33,9 +33,10 @@ import random
 import sys
 import time
 from array import array
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Iterator, Mapping, Optional, Sequence
+from typing import Any
 
 import torch
 import torch.nn.functional as F
@@ -43,7 +44,6 @@ import torch.nn.functional as F
 from auroralm.config import PILOT, AuroraLMConfig
 from auroralm.NN import AuroraLM
 from auroralm.tokenizer import AuroraTokenizer
-
 
 TRAINER_FORMAT_VERSION = 1
 CHECKPOINT_FORMAT_VERSION = 1
@@ -80,8 +80,8 @@ class TrainingSettings:
     seed: int
     amp: str
     deterministic: bool
-    max_train_documents: Optional[int]
-    max_validation_documents: Optional[int]
+    max_train_documents: int | None
+    max_validation_documents: int | None
 
 
 @dataclass(frozen=True)
@@ -307,7 +307,7 @@ def iter_document_texts(
     documents_path: Path,
     split: str,
     *,
-    max_documents: Optional[int] = None,
+    max_documents: int | None = None,
 ) -> Iterator[str]:
     if split not in {"train", "validation"}:
         raise ValueError("split must be 'train' or 'validation'.")
@@ -417,7 +417,7 @@ def build_packed_dataset(
     split: str,
     *,
     context_length: int,
-    max_documents: Optional[int] = None,
+    max_documents: int | None = None,
 ) -> PackedTokenDataset:
     token_ids = array("I")
     document_count = 0
@@ -864,7 +864,7 @@ def _prepare_run_directory(
     run_dir: Path,
     *,
     contract: Mapping[str, Any],
-    resume: Optional[str],
+    resume: str | None,
 ) -> None:
     run_dir.mkdir(parents=True, exist_ok=True)
     run_config_path = run_dir / RUN_CONFIG_FILENAME
@@ -939,9 +939,9 @@ def run_training(
     eval_batches: int,
     checkpoint_every: int,
     progress_every: int = 10,
-    resume: Optional[str] = None,
-    init_from: Optional[Path] = None,
-    stop_after_step: Optional[int] = None,
+    resume: str | None = None,
+    init_from: Path | None = None,
+    stop_after_step: int | None = None,
 ) -> dict[str, Any]:
     validate_settings(settings)
     if eval_every < 1 or eval_batches < 1 or checkpoint_every < 1 or progress_every < 1:
@@ -988,7 +988,7 @@ def run_training(
         )
 
     run_dir = Path(run_dir)
-    initial_model_state: Optional[Mapping[str, torch.Tensor]] = None
+    initial_model_state: Mapping[str, torch.Tensor] | None = None
     if resume is not None:
         run_config_path = run_dir / RUN_CONFIG_FILENAME
         if not run_config_path.is_file():
@@ -1286,7 +1286,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     if args.cpu_threads is not None:
         if args.cpu_threads < 1:

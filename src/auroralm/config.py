@@ -12,15 +12,13 @@ with EMOTION_WORDS in Aurora's live emotion_nodes.py.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
 
 from auroralm.state_schema import (
-    EMOTION_NAMES,
     EMOTION_COUNT,
-    SCHEMA_VERSION,
+    EMOTION_NAMES,
     SCHEMA_FINGERPRINT,
+    SCHEMA_VERSION,
 )
-
 
 # ---------------------------------------------------------------------------
 # State schema version
@@ -36,7 +34,7 @@ STATE_SCHEMA_VERSION = SCHEMA_VERSION
 # Ordering comes straight from state_schema.EMOTION_NAMES. Never rebuild this
 # list by hand — a reorder here silently teaches the model the wrong emotion.
 
-STATE_DIMENSIONS: List[str] = list(EMOTION_NAMES)
+STATE_DIMENSIONS: list[str] = list(EMOTION_NAMES)
 
 if len(STATE_DIMENSIONS) != EMOTION_COUNT:
     raise RuntimeError(
@@ -47,12 +45,12 @@ if len(STATE_DIMENSIONS) != EMOTION_COUNT:
 # Thalamic activation scores are non-negative and are scaled by a single
 # calibration ceiling (see state_schema.normalised_values), not per-dimension
 # min/max. Every dimension therefore shares the same post-normalisation range.
-STATE_RANGES: Dict[str, Tuple[float, float]] = {
+STATE_RANGES: dict[str, tuple[float, float]] = {
     name: (0.0, 1.0) for name in STATE_DIMENSIONS
 }
 
 # A missing node means "did not fire", which is zero, not "unknown".
-STATE_DEFAULTS: Dict[str, float] = {name: 0.0 for name in STATE_DIMENSIONS}
+STATE_DEFAULTS: dict[str, float] = {name: 0.0 for name in STATE_DIMENSIONS}
 
 # Frozen from a privacy-safe aggregate calibration using the maximum observed
 # positive activation with no clipping. The public receipt is tracked at
@@ -68,7 +66,7 @@ ACTIVATION_CEILING: float = 0.88
 # sleep-pressure accumulator, and the prefrontal confidence signal. They get
 # their own small vector so they cannot be confused with thalamic activations.
 
-REGULATOR_NAMES: Tuple[str, ...] = (
+REGULATOR_NAMES: tuple[str, ...] = (
     "tension",
     "coherence",
     "sleep_pressure",
@@ -86,7 +84,7 @@ REGULATOR_COUNT: int = len(REGULATOR_NAMES)
 
 # Unlike the emotion nodes, these have meaningful per-dimension ranges and are
 # clamped individually rather than scaled by one shared ceiling.
-REGULATOR_RANGES: Dict[str, Tuple[float, float]] = {
+REGULATOR_RANGES: dict[str, tuple[float, float]] = {
     "tension": (0.0, 1.0),
     "coherence": (0.0, 1.0),
     "sleep_pressure": (0.0, 1.0),
@@ -100,7 +98,7 @@ REGULATOR_RANGES: Dict[str, Tuple[float, float]] = {
     "safety_margin": (0.0, 1.0),
 }
 
-REGULATOR_DEFAULTS: Dict[str, float] = {name: 0.0 for name in REGULATOR_NAMES}
+REGULATOR_DEFAULTS: dict[str, float] = {name: 0.0 for name in REGULATOR_NAMES}
 
 
 # ---------------------------------------------------------------------------

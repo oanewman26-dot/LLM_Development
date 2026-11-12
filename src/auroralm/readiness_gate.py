@@ -14,9 +14,10 @@ import hashlib
 import json
 import math
 import os
+from collections.abc import Mapping
 from pathlib import Path
 from statistics import mean
-from typing import Any, Mapping, Optional
+from typing import Any
 
 from auroralm.activation_calibration import (
     CALIBRATION_FORMAT_VERSION,
@@ -24,11 +25,10 @@ from auroralm.activation_calibration import (
 )
 from auroralm.config import ACTIVATION_CEILING
 from auroralm.state_schema import (
-    AuroraState171,
     SCHEMA_FINGERPRINT,
     SCHEMA_VERSION,
+    AuroraState171,
 )
-
 
 AUDIT_FORMAT_VERSION = 1
 DEFAULT_CALIBRATION_MANIFEST = (
@@ -153,7 +153,7 @@ def _metric_summary(metrics: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _candidate_is_a(item_id: str) -> bool:
-    digest = hashlib.sha256(f"{BLIND_SEED}:{item_id}".encode("utf-8")).digest()
+    digest = hashlib.sha256(f"{BLIND_SEED}:{item_id}".encode()).digest()
     return digest[0] % 2 == 0
 
 
@@ -257,8 +257,12 @@ def _score_semantic_review(
     if not isinstance(items, list) or not items:
         raise ReadinessGateError("Completed scorecard has no items.")
 
-    candidate_scores = {criterion: [] for criterion in SEMANTIC_CRITERIA}
-    baseline_scores = {criterion: [] for criterion in SEMANTIC_CRITERIA}
+    candidate_scores: dict[str, list[float]] = {
+        criterion: [] for criterion in SEMANTIC_CRITERIA
+    }
+    baseline_scores: dict[str, list[float]] = {
+        criterion: [] for criterion in SEMANTIC_CRITERIA
+    }
     for item in items:
         if not isinstance(item, Mapping) or not isinstance(item.get("id"), str):
             raise ReadinessGateError("Scorecard item is malformed.")
@@ -306,8 +310,8 @@ def evaluate_base_gate(
     *,
     candidate_run: Path,
     baseline_run: Path,
-    scorecard_path: Optional[Path] = None,
-    scorecard_output: Optional[Path] = None,
+    scorecard_path: Path | None = None,
+    scorecard_output: Path | None = None,
 ) -> dict[str, Any]:
     candidate_run = Path(candidate_run)
     baseline_run = Path(baseline_run)
@@ -423,7 +427,7 @@ def evaluate_base_gate(
 def _manifest_descriptor(
     dataset_manifest: Mapping[str, Any],
     filename: str,
-) -> Optional[Mapping[str, Any]]:
+) -> Mapping[str, Any] | None:
     outputs = dataset_manifest.get("outputs")
     if not isinstance(outputs, Mapping):
         return None
@@ -442,7 +446,7 @@ def _is_sha256(value: Any) -> bool:
 def evaluate_state_material_gate(
     *,
     dataset_dir: Path,
-    calibration_manifest_path: Optional[Path] = None,
+    calibration_manifest_path: Path | None = None,
     activation_ceiling: Any = ACTIVATION_CEILING,
 ) -> dict[str, Any]:
     dataset_dir = Path(dataset_dir)
@@ -452,7 +456,7 @@ def evaluate_state_material_gate(
     invalid_rows = []
     valid_rows = 0
     usable_by_split = {"train": 0, "validation": 0}
-    sessions_by_split = {"train": set(), "validation": set()}
+    sessions_by_split: dict[str, set[str]] = {"train": set(), "validation": set()}
     state_hashes = set()
 
     if not dataset_manifest_path.is_file():
@@ -551,7 +555,7 @@ def evaluate_state_material_gate(
         else DEFAULT_CALIBRATION_MANIFEST
     )
     calibration_valid = False
-    calibration: Optional[dict[str, Any]] = None
+    calibration: dict[str, Any] | None = None
     if not calibration_path.is_file():
         reasons.append("activation calibration manifest is missing")
     else:
@@ -640,9 +644,9 @@ def run_readiness_audit(
     candidate_run: Path,
     baseline_run: Path,
     dataset_dir: Path,
-    scorecard_path: Optional[Path] = None,
-    scorecard_output: Optional[Path] = None,
-    calibration_manifest_path: Optional[Path] = None,
+    scorecard_path: Path | None = None,
+    scorecard_output: Path | None = None,
+    calibration_manifest_path: Path | None = None,
     activation_ceiling: Any = ACTIVATION_CEILING,
 ) -> dict[str, Any]:
     base_gate = evaluate_base_gate(

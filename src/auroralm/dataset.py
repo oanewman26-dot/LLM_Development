@@ -22,14 +22,14 @@ import os
 import re
 import unicodedata
 from collections import Counter
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime, timezone
 from math import isfinite
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any
 
 from auroralm.config import REGULATOR_NAMES, REGULATOR_RANGES
 from auroralm.state_schema import AuroraState171
-
 
 DATASET_FORMAT_VERSION = 1
 DEFAULT_SEED = "aurora-dataset-v1"
@@ -88,7 +88,7 @@ def assign_split(
     """Assign a stable train/validation split without global RNG state."""
     if not 0.0 < validation_fraction < 1.0:
         raise ValueError("validation_fraction must be between 0 and 1")
-    payload = f"{seed}\0{group_key}".encode("utf-8")
+    payload = f"{seed}\0{group_key}".encode()
     bucket = int.from_bytes(hashlib.sha256(payload).digest()[:8], "big")
     score = bucket / float(2**64)
     return "validation" if score < validation_fraction else "train"
@@ -386,7 +386,7 @@ def _validate_stateful_record(
     session_id = clean_text(record.get("session_id")) or filename
     raw_turn = record.get("turn")
     try:
-        turn_number = int(raw_turn)
+        turn_number = int(raw_turn)  # type: ignore[arg-type]  # None is rejected by the except below
     except (TypeError, ValueError) as exc:
         raise DatasetError(f"{location} turn must be an integer") from exc
 
