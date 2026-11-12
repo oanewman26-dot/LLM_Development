@@ -136,9 +136,8 @@ def _metric_summary(metrics: list[dict[str, Any]]) -> dict[str, Any]:
             "recent_window": 0,
         }
     recent = validation[-RECENT_EVALUATIONS:]
-    improvement = (
-        float(recent[0]["validation_loss"])
-        - float(recent[-1]["validation_loss"])
+    improvement = float(recent[0]["validation_loss"]) - float(
+        recent[-1]["validation_loss"]
     )
     return {
         "evaluations": len(validation),
@@ -164,9 +163,7 @@ def _result_map(report: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
         raise ReadinessGateError("Qualitative report has no results list.")
     mapped = {}
     for result in results:
-        if not isinstance(result, Mapping) or not isinstance(
-            result.get("name"), str
-        ):
+        if not isinstance(result, Mapping) or not isinstance(result.get("name"), str):
             raise ReadinessGateError("Qualitative result is malformed.")
         mapped[result["name"]] = result
     return mapped
@@ -189,24 +186,16 @@ def build_blinded_scorecard(
             baseline_result = baseline[name]
             candidate_result = candidate[name]
             if baseline_result.get("prompt") != candidate_result.get("prompt"):
-                raise ReadinessGateError(
-                    f"{decoding}:{name} prompt text has drifted."
-                )
+                raise ReadinessGateError(f"{decoding}:{name} prompt text has drifted.")
             item_id = f"{decoding}:{name}"
             candidate_a = _candidate_is_a(item_id)
             continuation_a = (
-                candidate_result["text"]
-                if candidate_a
-                else baseline_result["text"]
+                candidate_result["text"] if candidate_a else baseline_result["text"]
             )
             continuation_b = (
-                baseline_result["text"]
-                if candidate_a
-                else candidate_result["text"]
+                baseline_result["text"] if candidate_a else candidate_result["text"]
             )
-            empty_scores = {
-                criterion: None for criterion in SEMANTIC_CRITERIA
-            }
+            empty_scores = {criterion: None for criterion in SEMANTIC_CRITERIA}
             items.append(
                 {
                     "id": item_id,
@@ -299,17 +288,12 @@ def _score_semantic_review(
                 destination[criterion].append(float(value))
 
     candidate_means = {
-        criterion: mean(values)
-        for criterion, values in candidate_scores.items()
+        criterion: mean(values) for criterion, values in candidate_scores.items()
     }
     baseline_means = {
-        criterion: mean(values)
-        for criterion, values in baseline_scores.items()
+        criterion: mean(values) for criterion, values in baseline_scores.items()
     }
-    passed = all(
-        value >= MINIMUM_SEMANTIC_MEAN
-        for value in candidate_means.values()
-    )
+    passed = all(value >= MINIMUM_SEMANTIC_MEAN for value in candidate_means.values())
     return {
         "status": "pass" if passed else "fail",
         "threshold": MINIMUM_SEMANTIC_MEAN,
@@ -337,12 +321,8 @@ def evaluate_base_gate(
     completed_steps = latest.get("completed_steps", 0)
     complete = completed_steps == max_steps
 
-    candidate_metrics = _metric_summary(
-        _read_metrics(candidate_run / "metrics.jsonl")
-    )
-    baseline_metrics = _metric_summary(
-        _read_metrics(baseline_run / "metrics.jsonl")
-    )
+    candidate_metrics = _metric_summary(_read_metrics(candidate_run / "metrics.jsonl"))
+    baseline_metrics = _metric_summary(_read_metrics(baseline_run / "metrics.jsonl"))
     recent_improvement = candidate_metrics["recent_validation_improvement"]
     plateau_pass = (
         complete
@@ -384,9 +364,7 @@ def evaluate_base_gate(
             candidate_reports=candidate_reports,
         )
         if scorecard_path is not None and Path(scorecard_path).is_file():
-            semantic_review = _score_semantic_review(
-                _read_json(Path(scorecard_path))
-            )
+            semantic_review = _score_semantic_review(_read_json(Path(scorecard_path)))
         elif scorecard_output is not None:
             scorecard_output = Path(scorecard_output)
             if not scorecard_output.exists():
@@ -414,11 +392,7 @@ def evaluate_base_gate(
 
     if not complete or missing_qualitative or semantic_review["status"] == "pending":
         status = "PENDING"
-    elif (
-        plateau_pass
-        and improves_on_baseline
-        and semantic_review["status"] == "pass"
-    ):
+    elif plateau_pass and improves_on_baseline and semantic_review["status"] == "pass":
         status = "PASS"
     else:
         status = "NOT_READY"
@@ -585,12 +559,10 @@ def evaluate_state_material_gate(
         statistics = calibration.get("statistics")
         calibration_valid = (
             ceiling_valid
-            and calibration.get("format_version")
-            == CALIBRATION_FORMAT_VERSION
+            and calibration.get("format_version") == CALIBRATION_FORMAT_VERSION
             and calibration.get("schema_version") == SCHEMA_VERSION
             and calibration.get("schema_fingerprint") == SCHEMA_FINGERPRINT
-            and calibration.get("activation_ceiling")
-            == float(activation_ceiling)
+            and calibration.get("activation_ceiling") == float(activation_ceiling)
             and calibration.get("method") == CALIBRATION_METHOD
             and isinstance(calibration.get("frozen_at"), str)
             and bool(calibration["frozen_at"].strip())
@@ -608,9 +580,7 @@ def evaluate_state_material_gate(
             and statistics.get("maximum") == float(activation_ceiling)
         )
         if not calibration_valid:
-            reasons.append(
-                "activation calibration manifest is invalid or mismatched"
-            )
+            reasons.append("activation calibration manifest is invalid or mismatched")
 
     if valid_rows == 0:
         reasons.append("no genuine state-aligned turns exist")
@@ -630,17 +600,13 @@ def evaluate_state_material_gate(
                     if not line.strip():
                         continue
                     row = json.loads(line)
-                    AuroraState171.from_record(
-                        row["aurora_state"]
-                    ).normalised_values(
+                    AuroraState171.from_record(row["aurora_state"]).normalised_values(
                         activation_ceiling=float(activation_ceiling),
                         clip=False,
                     )
         except (KeyError, TypeError, ValueError) as exc:
             calibration_valid = False
-            reasons.append(
-                f"recorded state exceeds or violates calibration: {exc}"
-            )
+            reasons.append(f"recorded state exceeds or violates calibration: {exc}")
 
     status = "PASS" if not reasons else "BLOCKED"
     return {
@@ -654,8 +620,7 @@ def evaluate_state_material_gate(
             "invalid_rows": invalid_rows,
             "usable_text_pairs": usable_by_split,
             "sessions": {
-                split: len(sessions)
-                for split, sessions in sessions_by_split.items()
+                split: len(sessions) for split, sessions in sessions_by_split.items()
             },
             "distinct_state_vectors": len(state_hashes),
         },
@@ -691,10 +656,7 @@ def run_readiness_audit(
         calibration_manifest_path=calibration_manifest_path,
         activation_ceiling=activation_ceiling,
     )
-    authorised = (
-        base_gate["status"] == "PASS"
-        and state_gate["status"] == "PASS"
-    )
+    authorised = base_gate["status"] == "PASS" and state_gate["status"] == "PASS"
     return {
         "format_version": AUDIT_FORMAT_VERSION,
         "test": "pre_state_conditioning_two_gate_readiness",

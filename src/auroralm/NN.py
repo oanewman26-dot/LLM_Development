@@ -31,10 +31,7 @@ class AuroraLM(nn.Module):
 
         self.config = config
 
-        self.embedding = nn.Embedding(
-            config.vocab_size,
-            config.hidden_size
-        )
+        self.embedding = nn.Embedding(config.vocab_size, config.hidden_size)
 
         # State encoder: compresses 171-dim source state to block latents
         if config.state_size > 0:
@@ -50,19 +47,12 @@ class AuroraLM(nn.Module):
             self.state_encoder = None
 
         self.blocks = nn.ModuleList(
-            [
-                TransformerBlock(config)
-                for _ in range(config.num_layers)
-            ]
+            [TransformerBlock(config) for _ in range(config.num_layers)]
         )
 
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-        self.output = nn.Linear(
-            config.hidden_size,
-            config.vocab_size,
-            bias=False
-        )
+        self.output = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
     def forward(self, tokens, aurora_state=None, *, return_routing=False):
         """

@@ -103,9 +103,7 @@ def _write_training_fixture(root: Path) -> tuple[Path, Path, AuroraLMConfig]:
         {
             "artifact": {
                 "fingerprint": tokenizer.fingerprint,
-                "tokenizer_json": _descriptor(
-                    tokenizer_dir / "tokenizer.json"
-                ),
+                "tokenizer_json": _descriptor(tokenizer_dir / "tokenizer.json"),
             }
         },
     )
@@ -222,9 +220,7 @@ class TestTrainingPipeline(unittest.TestCase):
     def test_documents_tampering_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            dataset_dir, tokenizer_dir, model_config = (
-                _write_training_fixture(root)
-            )
+            dataset_dir, tokenizer_dir, model_config = _write_training_fixture(root)
             with (dataset_dir / "documents.jsonl").open(
                 "a",
                 encoding="utf-8",
@@ -244,9 +240,7 @@ class TestTrainingPipeline(unittest.TestCase):
     def test_interrupted_training_resumes_byte_identically(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            dataset_dir, tokenizer_dir, model_config = (
-                _write_training_fixture(root)
-            )
+            dataset_dir, tokenizer_dir, model_config = _write_training_fixture(root)
             settings = _tiny_settings()
             device = torch.device("cpu")
 
@@ -318,9 +312,7 @@ class TestTrainingPipeline(unittest.TestCase):
     def test_new_phase_initialises_from_verified_checkpoint(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            dataset_dir, tokenizer_dir, model_config = (
-                _write_training_fixture(root)
-            )
+            dataset_dir, tokenizer_dir, model_config = _write_training_fixture(root)
             device = torch.device("cpu")
             source_dir = root / "source"
             run_training(
@@ -370,18 +362,14 @@ class TestTrainingPipeline(unittest.TestCase):
                 "checkpoint",
             )
             self.assertEqual(
-                checkpoint["contract"]["initialization"][
-                    "source_completed_steps"
-                ],
+                checkpoint["contract"]["initialization"]["source_completed_steps"],
                 1,
             )
 
     def test_checkpoint_initialised_phase_resumes_its_original_contract(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            dataset_dir, tokenizer_dir, model_config = (
-                _write_training_fixture(root)
-            )
+            dataset_dir, tokenizer_dir, model_config = _write_training_fixture(root)
             device = torch.device("cpu")
             source_dir = root / "source"
             run_training(

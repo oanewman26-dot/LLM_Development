@@ -271,10 +271,7 @@ class AuroraTokenizer:
 
     @property
     def special_token_ids(self) -> Dict[str, int]:
-        return {
-            token: self._backend.token_to_id(token)
-            for token in SPECIAL_TOKENS
-        }
+        return {token: self._backend.token_to_id(token) for token in SPECIAL_TOKENS}
 
     @property
     def fingerprint(self) -> str:
@@ -322,9 +319,7 @@ class AuroraTokenizer:
         if truncation and max_length is None:
             raise ValueError("truncation=True requires max_length.")
 
-        content_ids = list(
-            self._backend.encode(text, add_special_tokens=False).ids
-        )
+        content_ids = list(self._backend.encode(text, add_special_tokens=False).ids)
         special_count = 2 if add_special_tokens else 0
 
         if truncation and len(content_ids) + special_count > max_length:
@@ -424,9 +419,9 @@ class AuroraTokenizer:
             "add_bos_eos": True,
             "fingerprint": fingerprint,
         }
-        metadata_bytes = (
-            json.dumps(metadata, indent=2, sort_keys=True) + "\n"
-        ).encode("utf-8")
+        metadata_bytes = (json.dumps(metadata, indent=2, sort_keys=True) + "\n").encode(
+            "utf-8"
+        )
 
         _atomic_write(directory / TOKENIZER_FILENAME, tokenizer_bytes)
         _atomic_write(directory / METADATA_FILENAME, metadata_bytes)

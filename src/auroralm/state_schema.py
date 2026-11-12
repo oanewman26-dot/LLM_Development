@@ -27,37 +27,177 @@ SCHEMA_VERSION = "aurora-state-171/v1"
 # Aurora's live emotion_nodes.py.  New state meanings require a new schema
 # version rather than an in-place reorder.
 EMOTION_NAMES: tuple[str, ...] = (
-    "afraid", "alarmed", "alert", "amazed", "amused", "angry", "annoyed",
-    "anxious", "aroused", "ashamed", "astonished", "at ease", "awestruck",
-    "bewildered", "bitter", "blissful", "bored", "brooding", "calm",
-    "cheerful", "compassionate", "contemptuous", "content", "defiant",
-    "delighted", "dependent", "depressed", "desperate", "disdainful",
-    "disgusted", "disoriented", "dispirited", "distressed", "disturbed",
-    "docile", "droopy", "dumbstruck", "eager", "ecstatic", "elated",
-    "embarrassed", "empathetic", "energized", "enraged", "enthusiastic",
-    "envious", "euphoric", "exasperated", "excited", "exuberant",
-    "frightened", "frustrated", "fulfilled", "furious", "gloomy",
-    "grateful", "greedy", "grief-stricken", "grumpy", "guilty", "happy",
-    "hateful", "heartbroken", "hope", "hopeful", "horrified", "hostile",
-    "humiliated", "hurt", "hysterical", "impatient", "indifferent",
-    "indignant", "infatuated", "inspired", "insulted", "invigorated",
-    "irate", "irritated", "jealous", "joyful", "jubilant", "kind",
-    "lazy", "listless", "lonely", "loving", "mad", "melancholy",
-    "miserable", "mortified", "mystified", "nervous", "nostalgic",
-    "obstinate", "offended", "on edge", "optimistic", "outraged",
-    "overwhelmed", "panicked", "paranoid", "patient", "peaceful",
-    "perplexed", "playful", "pleased", "proud", "puzzled", "rattled",
-    "reflective", "refreshed", "regretful", "rejuvenated", "relaxed",
-    "relieved", "remorseful", "resentful", "resigned", "restless",
-    "sad", "safe", "satisfied", "scared", "scornful", "self-confident",
-    "self-conscious", "self-critical", "sensitive", "sentimental",
-    "serene", "shaken", "shocked", "skeptical", "sleepy", "sluggish",
-    "smug", "sorry", "spiteful", "stimulated", "stressed", "stubborn",
-    "stuck", "sullen", "surprised", "suspicious", "sympathetic", "tense",
-    "terrified", "thankful", "thrilled", "tired", "tormented", "trapped",
-    "triumphant", "troubled", "uneasy", "unhappy", "unnerved", "unsettled",
-    "upset", "valiant", "vengeful", "vibrant", "vigilant", "vindictive",
-    "vulnerable", "weary", "worn out", "worried", "worthless",
+    "afraid",
+    "alarmed",
+    "alert",
+    "amazed",
+    "amused",
+    "angry",
+    "annoyed",
+    "anxious",
+    "aroused",
+    "ashamed",
+    "astonished",
+    "at ease",
+    "awestruck",
+    "bewildered",
+    "bitter",
+    "blissful",
+    "bored",
+    "brooding",
+    "calm",
+    "cheerful",
+    "compassionate",
+    "contemptuous",
+    "content",
+    "defiant",
+    "delighted",
+    "dependent",
+    "depressed",
+    "desperate",
+    "disdainful",
+    "disgusted",
+    "disoriented",
+    "dispirited",
+    "distressed",
+    "disturbed",
+    "docile",
+    "droopy",
+    "dumbstruck",
+    "eager",
+    "ecstatic",
+    "elated",
+    "embarrassed",
+    "empathetic",
+    "energized",
+    "enraged",
+    "enthusiastic",
+    "envious",
+    "euphoric",
+    "exasperated",
+    "excited",
+    "exuberant",
+    "frightened",
+    "frustrated",
+    "fulfilled",
+    "furious",
+    "gloomy",
+    "grateful",
+    "greedy",
+    "grief-stricken",
+    "grumpy",
+    "guilty",
+    "happy",
+    "hateful",
+    "heartbroken",
+    "hope",
+    "hopeful",
+    "horrified",
+    "hostile",
+    "humiliated",
+    "hurt",
+    "hysterical",
+    "impatient",
+    "indifferent",
+    "indignant",
+    "infatuated",
+    "inspired",
+    "insulted",
+    "invigorated",
+    "irate",
+    "irritated",
+    "jealous",
+    "joyful",
+    "jubilant",
+    "kind",
+    "lazy",
+    "listless",
+    "lonely",
+    "loving",
+    "mad",
+    "melancholy",
+    "miserable",
+    "mortified",
+    "mystified",
+    "nervous",
+    "nostalgic",
+    "obstinate",
+    "offended",
+    "on edge",
+    "optimistic",
+    "outraged",
+    "overwhelmed",
+    "panicked",
+    "paranoid",
+    "patient",
+    "peaceful",
+    "perplexed",
+    "playful",
+    "pleased",
+    "proud",
+    "puzzled",
+    "rattled",
+    "reflective",
+    "refreshed",
+    "regretful",
+    "rejuvenated",
+    "relaxed",
+    "relieved",
+    "remorseful",
+    "resentful",
+    "resigned",
+    "restless",
+    "sad",
+    "safe",
+    "satisfied",
+    "scared",
+    "scornful",
+    "self-confident",
+    "self-conscious",
+    "self-critical",
+    "sensitive",
+    "sentimental",
+    "serene",
+    "shaken",
+    "shocked",
+    "skeptical",
+    "sleepy",
+    "sluggish",
+    "smug",
+    "sorry",
+    "spiteful",
+    "stimulated",
+    "stressed",
+    "stubborn",
+    "stuck",
+    "sullen",
+    "surprised",
+    "suspicious",
+    "sympathetic",
+    "tense",
+    "terrified",
+    "thankful",
+    "thrilled",
+    "tired",
+    "tormented",
+    "trapped",
+    "triumphant",
+    "troubled",
+    "uneasy",
+    "unhappy",
+    "unnerved",
+    "unsettled",
+    "upset",
+    "valiant",
+    "vengeful",
+    "vibrant",
+    "vigilant",
+    "vindictive",
+    "vulnerable",
+    "weary",
+    "worn out",
+    "worried",
+    "worthless",
 )
 
 EMOTION_COUNT = len(EMOTION_NAMES)
@@ -65,7 +205,9 @@ EMOTION_INDEX = {name: index for index, name in enumerate(EMOTION_NAMES)}
 SCHEMA_FINGERPRINT = sha256("\0".join(EMOTION_NAMES).encode("utf-8")).hexdigest()
 
 if EMOTION_COUNT != 171:
-    raise RuntimeError(f"AuroraLM requires 171 emotion dimensions, found {EMOTION_COUNT}.")
+    raise RuntimeError(
+        f"AuroraLM requires 171 emotion dimensions, found {EMOTION_COUNT}."
+    )
 if len(EMOTION_INDEX) != EMOTION_COUNT:
     raise RuntimeError("Emotion names must be unique.")
 
@@ -236,9 +378,13 @@ class AuroraState171:
         try:
             ceiling = float(activation_ceiling)
         except (TypeError, ValueError) as exc:
-            raise StateSchemaError("activation_ceiling must be a positive number.") from exc
+            raise StateSchemaError(
+                "activation_ceiling must be a positive number."
+            ) from exc
         if not isfinite(ceiling) or ceiling <= 0.0:
-            raise StateSchemaError("activation_ceiling must be a positive finite number.")
+            raise StateSchemaError(
+                "activation_ceiling must be a positive finite number."
+            )
 
         normalised: list[float] = []
         for name, value in zip(EMOTION_NAMES, self.values):
@@ -273,11 +419,15 @@ class AuroraState171:
                 f"Expected schema {SCHEMA_VERSION!r}, got {version!r}."
             )
         if fingerprint != SCHEMA_FINGERPRINT:
-            raise StateSchemaError("State schema fingerprint does not match this model.")
+            raise StateSchemaError(
+                "State schema fingerprint does not match this model."
+            )
 
         values = record.get("values")
         if not isinstance(values, Sequence) or isinstance(values, (str, bytes)):
-            raise StateSchemaError("State record must contain a numeric values sequence.")
+            raise StateSchemaError(
+                "State record must contain a numeric values sequence."
+            )
 
         captured_at = record.get("captured_at")
         source = record.get("source", "thalamus")

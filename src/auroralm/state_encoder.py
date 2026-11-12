@@ -91,8 +91,7 @@ class StateEncoder(nn.Module):
 
         if regulators.shape[-1] != self.regulator_dim:
             raise ValueError(
-                f"Expected {self.regulator_dim} regulators, "
-                f"got {regulators.shape[-1]}."
+                f"Expected {self.regulator_dim} regulators, got {regulators.shape[-1]}."
             )
 
         return torch.cat([aurora_state, regulators], dim=-1)

@@ -61,9 +61,7 @@ class ExpertPool(nn.Module):
         self.context_length = int(getattr(config, "context_length", 0))
         if self.context_length < 1:
             raise ValueError("ExpertPool requires config.context_length >= 1.")
-        self.experts = nn.ModuleList(
-            SwiGLU(config) for _ in range(self.num_experts)
-        )
+        self.experts = nn.ModuleList(SwiGLU(config) for _ in range(self.num_experts))
 
     def copy_dense_weights_(self, dense_ffn: SwiGLU) -> "ExpertPool":
         """Clone one dense SwiGLU into every expert for function-preserving init."""
@@ -97,7 +95,9 @@ class ExpertPool(nn.Module):
         if expert_indices.shape != expert_weights.shape:
             raise ValueError("expert_indices and expert_weights shapes must match.")
         if expert_indices.shape[:2] != hidden_states.shape[:2]:
-            raise ValueError("Route batch/sequence dimensions must match hidden_states.")
+            raise ValueError(
+                "Route batch/sequence dimensions must match hidden_states."
+            )
         if expert_indices.shape[-1] < 1:
             raise ValueError("At least one expert route is required per token.")
         if expert_indices.dtype != torch.long:
@@ -130,10 +130,7 @@ class ExpertPool(nn.Module):
         capacity = max(
             1,
             math.ceil(
-                self.capacity_factor
-                * self.context_length
-                * top_k
-                / self.num_experts
+                self.capacity_factor * self.context_length * top_k / self.num_experts
             ),
         )
 

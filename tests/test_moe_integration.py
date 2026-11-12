@@ -63,9 +63,7 @@ class TestMoEIntegration(unittest.TestCase):
                 (2, 6, config.top_k_experts),
             )
             self.assertEqual(output.dispatch.hidden_states.shape, (2, 6, 16))
-            self.assertTrue(
-                torch.all(output.dispatch.active_assignments.any(dim=-1))
-            )
+            self.assertTrue(torch.all(output.dispatch.active_assignments.any(dim=-1)))
 
     def test_moe_preserves_zero_init_state_baseline(self):
         torch.manual_seed(32)
@@ -91,11 +89,13 @@ class TestMoEIntegration(unittest.TestCase):
             full_logits = model(tokens, state)
             prefix_logits = model(tokens[:, :4], state)
 
-        self.assertTrue(torch.allclose(
-            full_logits[:, :4],
-            prefix_logits,
-            atol=1e-6,
-        ))
+        self.assertTrue(
+            torch.allclose(
+                full_logits[:, :4],
+                prefix_logits,
+                atol=1e-6,
+            )
+        )
 
     def test_cloned_experts_preserve_dense_transformer_block(self):
         torch.manual_seed(34)

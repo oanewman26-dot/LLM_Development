@@ -103,9 +103,7 @@ class TestAuroraTokenizer(unittest.TestCase):
             self.assertEqual(loaded.decode(expected_ids), text)
             self.assertEqual(loaded.fingerprint, self.tokenizer.fingerprint)
             self.assertTrue((Path(temporary) / "tokenizer.json").is_file())
-            self.assertTrue(
-                (Path(temporary) / "tokenizer_config.json").is_file()
-            )
+            self.assertTrue((Path(temporary) / "tokenizer_config.json").is_file())
 
     def test_tampered_artifact_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:

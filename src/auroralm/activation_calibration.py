@@ -50,10 +50,7 @@ def _percentile(sorted_values: Sequence[float], fraction: float) -> float:
         return sorted_values[lower]
     lower_weight = upper - position
     upper_weight = position - lower
-    return (
-        sorted_values[lower] * lower_weight
-        + sorted_values[upper] * upper_weight
-    )
+    return sorted_values[lower] * lower_weight + sorted_values[upper] * upper_weight
 
 
 def _source_digest(descriptors: Iterable[dict[str, Any]]) -> str:
@@ -110,9 +107,7 @@ def calibrate_session_logs(
                             f"{path.name}:{line_number}: {exc}"
                         ) from exc
 
-                    active_scores.extend(
-                        value for value in state.values if value > 0.0
-                    )
+                    active_scores.extend(value for value in state.values if value > 0.0)
                     file_records += 1
                     record_count += 1
         except OSError as exc:
@@ -150,8 +145,7 @@ def calibrate_session_logs(
         "source_log_count": len(source_descriptors),
         "source_digest": _source_digest(source_descriptors),
         "source_digest_contract": (
-            "sha256(canonical JSON of ordered "
-            "{sha256,record_count} descriptors)"
+            "sha256(canonical JSON of ordered {sha256,record_count} descriptors)"
         ),
         "statistics": {
             "minimum_positive": min(active_scores),

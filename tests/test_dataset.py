@@ -27,10 +27,7 @@ def valid_state_record():
 
 
 def valid_regulators():
-    values = {
-        name: 0.5
-        for name in REGULATOR_NAMES
-    }
+    values = {name: 0.5 for name in REGULATOR_NAMES}
     values["dominant_valence"] = -0.25
     return values
 
@@ -180,7 +177,12 @@ class TestDatasetBuilder(unittest.TestCase):
             first = fixture.prepare()
             second = fixture.prepare()
 
-            for key in ("documents", "legacy_turns", "stateful_turns", "tokenizer_texts"):
+            for key in (
+                "documents",
+                "legacy_turns",
+                "stateful_turns",
+                "tokenizer_texts",
+            ):
                 self.assertEqual(first[key], second[key])
 
             output_one = Path(temporary) / "out-one"

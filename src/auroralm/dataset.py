@@ -127,9 +127,7 @@ def _safe_subset(mapping: Any, fields: Sequence[str]) -> dict[str, Any]:
     if not isinstance(mapping, Mapping):
         return {}
     return {
-        field: _safe_scalar(mapping.get(field))
-        for field in fields
-        if field in mapping
+        field: _safe_scalar(mapping.get(field)) for field in fields if field in mapping
     }
 
 
@@ -151,9 +149,7 @@ def _validate_regulators(value: Any, *, location: str) -> dict[str, float]:
     for name in REGULATOR_NAMES:
         raw_value = value[name]
         if isinstance(raw_value, bool):
-            raise DatasetError(
-                f"{location} regulator {name!r} must be numeric"
-            )
+            raise DatasetError(f"{location} regulator {name!r} must be numeric")
         try:
             number = float(raw_value)
         except (TypeError, ValueError) as exc:
@@ -243,9 +239,7 @@ class DocumentAccumulator:
 
 def _legacy_turn_key(input_text: str, output_text: str) -> str:
     payload = (
-        _normalised_text_key(input_text)
-        + "\0"
-        + _normalised_text_key(output_text)
+        _normalised_text_key(input_text) + "\0" + _normalised_text_key(output_text)
     )
     return _sha256_bytes(payload.encode("utf-8"))
 
@@ -319,13 +313,13 @@ def extract_journal(
             },
             "events": {
                 "trigger": _safe_scalar(trigger),
-                "dominant_emotion": _safe_scalar(
-                    context.get("dominant_emotion")
-                ),
+                "dominant_emotion": _safe_scalar(context.get("dominant_emotion")),
             },
         }
 
-    return list(sorted(legacy_by_key.values(), key=lambda row: row["record_id"])), duplicate_turns
+    return list(
+        sorted(legacy_by_key.values(), key=lambda row: row["record_id"])
+    ), duplicate_turns
 
 
 def extract_memories(path: Path, documents: DocumentAccumulator) -> None:
@@ -463,7 +457,9 @@ def extract_stateful_sessions(
         try:
             lines = path.read_text(encoding="utf-8").splitlines()
         except (OSError, UnicodeDecodeError) as exc:
-            raise DatasetError(f"Could not read UTF-8 session file {path.name}") from exc
+            raise DatasetError(
+                f"Could not read UTF-8 session file {path.name}"
+            ) from exc
 
         for line_number, line in enumerate(lines, start=1):
             if not line.strip():
@@ -586,7 +582,12 @@ def prepare_dataset(
     min_chars: int = DEFAULT_MIN_CHARS,
 ) -> dict[str, Any]:
     """Load approved sources and return records plus a text-free audit summary."""
-    if journal_path is None and memories_path is None and sessions_dir is None and not general_text_paths:
+    if (
+        journal_path is None
+        and memories_path is None
+        and sessions_dir is None
+        and not general_text_paths
+    ):
         raise DatasetError("At least one input source is required")
     if min_chars < 1:
         raise ValueError("min_chars must be at least 1")

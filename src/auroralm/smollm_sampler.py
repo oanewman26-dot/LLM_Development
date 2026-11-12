@@ -308,16 +308,10 @@ def write_samples(
 
     source_manifests = []
     for sample, path in zip(samples, output_paths):
-        text_payload = (
-            "\n\n".join(sample["texts"]) + "\n"
-        ).encode("utf-8")
+        text_payload = ("\n\n".join(sample["texts"]) + "\n").encode("utf-8")
         _atomic_write(path, text_payload)
         source_manifests.append(
-            {
-                key: value
-                for key, value in sample.items()
-                if key != "texts"
-            }
+            {key: value for key, value in sample.items() if key != "texts"}
             | {
                 "file": path.name,
                 "bytes": len(text_payload),
@@ -351,8 +345,7 @@ def write_samples(
         },
     }
     manifest_bytes = (
-        json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True)
-        + "\n"
+        json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     ).encode("utf-8")
     _atomic_write(manifest_path, manifest_bytes)
     return manifest

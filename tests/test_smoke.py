@@ -30,6 +30,7 @@ from auroralm.NN import AuroraLM
 # Fixture: pinned seed and device
 # ---------------------------------------------------------------------------
 
+
 def set_seed(seed=42):
     """Pin all randomness for reproducible smoke tests."""
     torch.manual_seed(seed)
@@ -44,6 +45,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Helper: build a dummy batch
 # ---------------------------------------------------------------------------
 
+
 def dummy_batch(config, batch_size=2, seq_len=16):
     """Random token IDs + random AuroraState171."""
     tokens = torch.randint(0, config.vocab_size, (batch_size, seq_len))
@@ -55,6 +57,7 @@ def dummy_batch(config, batch_size=2, seq_len=16):
 # Test 1: module imports normally
 # ---------------------------------------------------------------------------
 
+
 def test_imports():
     """All core modules import without error."""
     from auroralm import config
@@ -64,12 +67,14 @@ def test_imports():
     from auroralm import feetforward
     from auroralm import RSMnorm
     from auroralm import state_encoder
+
     assert config.STATE_SCHEMA_VERSION == STATE_SCHEMA_VERSION
 
 
 # ---------------------------------------------------------------------------
 # Test 2: forward pass produces correct logit shapes
 # ---------------------------------------------------------------------------
+
 
 def test_forward_shapes():
     """Logits shape is (batch, seq, vocab)."""
@@ -85,12 +90,15 @@ def test_forward_shapes():
     with torch.no_grad():
         logits = model(tokens, aurora_state)
 
-    assert logits.shape == (2, 16, config.vocab_size),         f"Expected (2, 16, {config.vocab_size}), got {logits.shape}"
+    assert logits.shape == (2, 16, config.vocab_size), (
+        f"Expected (2, 16, {config.vocab_size}), got {logits.shape}"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Test 3: initial loss is near theoretical maximum
 # ---------------------------------------------------------------------------
+
 
 def test_initial_loss():
     """Random weights should give loss close to ln(vocab_size)."""
@@ -111,18 +119,20 @@ def test_initial_loss():
     shift_labels = tokens[:, 1:].contiguous()
 
     loss = F.cross_entropy(
-        shift_logits.view(-1, config.vocab_size),
-        shift_labels.view(-1)
+        shift_logits.view(-1, config.vocab_size), shift_labels.view(-1)
     )
 
     theoretical = torch.log(torch.tensor(float(config.vocab_size)))
     # Allow 5% tolerance for random init variance
-    assert torch.isclose(loss, theoretical, rtol=0.05),         f"Loss {loss.item():.4f} far from theoretical {theoretical.item():.4f}"
+    assert torch.isclose(loss, theoretical, rtol=0.05), (
+        f"Loss {loss.item():.4f} far from theoretical {theoretical.item():.4f}"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Test 4: gradients flow to all parameter tensors
 # ---------------------------------------------------------------------------
+
 
 def test_gradient_flow():
     """A backward pass touches every parameter that requires grad.
@@ -203,6 +213,7 @@ def test_gradient_flow():
 # Test 5: zero-init baseline — aurora_state=None matches random state
 # ---------------------------------------------------------------------------
 
+
 def test_zero_init_baseline():
     """At init, aurora_state=None and a random state produce identical logits."""
     set_seed(42)
@@ -218,12 +229,15 @@ def test_zero_init_baseline():
         logits_with_state = model(tokens, aurora_state)
         logits_no_state = model(tokens, None)
 
-    assert torch.allclose(logits_with_state, logits_no_state, atol=1e-6),         "Zero-init baseline broken: stateful and stateless logits differ at init"
+    assert torch.allclose(logits_with_state, logits_no_state, atol=1e-6), (
+        "Zero-init baseline broken: stateful and stateless logits differ at init"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Test 6: control model (state_size=0) matches PILOT with state disabled
 # ---------------------------------------------------------------------------
+
 
 def test_control_model_equivalence():
     """CONTROL_PILOT and PILOT with aurora_state=None are identical."""
@@ -251,12 +265,15 @@ def test_control_model_equivalence():
         pilot_logits = pilot_model(tokens, None)
         control_logits = control_model(tokens, None)
 
-    assert torch.allclose(pilot_logits, control_logits, atol=1e-6),         "CONTROL_PILOT diverges from PILOT with state disabled"
+    assert torch.allclose(pilot_logits, control_logits, atol=1e-6), (
+        "CONTROL_PILOT diverges from PILOT with state disabled"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Test 7: causal masking — future tokens do not leak
 # ---------------------------------------------------------------------------
+
 
 def test_causal_mask():
     """Position i must not attend to position j > i."""
@@ -279,12 +296,15 @@ def test_causal_mask():
         logits_trunc = model(tokens_trunc, aurora_state)
 
     # First 4 positions must be identical regardless of future context
-    assert torch.allclose(logits_full[:, :4, :], logits_trunc, atol=1e-6),         "Causal mask leak: future tokens affect past positions"
+    assert torch.allclose(logits_full[:, :4, :], logits_trunc, atol=1e-6), (
+        "Causal mask leak: future tokens affect past positions"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Test 8: state encoder produces correct output shapes
 # ---------------------------------------------------------------------------
+
 
 def test_state_encoder_shapes():
     """StateEncoder returns (batch, state_size) and optional (batch, num_experts)."""
@@ -324,6 +344,7 @@ def test_state_encoder_shapes():
 # Test 9: parameter count matches config estimate
 # ---------------------------------------------------------------------------
 
+
 def test_parameter_count():
     """Actual params should be within 5% of config estimate."""
     set_seed(42)
@@ -335,7 +356,9 @@ def test_parameter_count():
 
     # Allow 5% tolerance (estimate includes all components)
     ratio = total / estimated
-    assert 0.95 <= ratio <= 1.05,         f"Param count {total} far from estimate {estimated} (ratio {ratio:.2f})"
+    assert 0.95 <= ratio <= 1.05, (
+        f"Param count {total} far from estimate {estimated} (ratio {ratio:.2f})"
+    )
     assert trainable == total, "All parameters should be trainable"
 
 
@@ -343,13 +366,16 @@ def test_parameter_count():
 # Test 10: state schema version is stamped in checkpoints
 # ---------------------------------------------------------------------------
 
+
 def test_schema_version_in_state_dict():
     """State dict metadata carries the schema version."""
     set_seed(42)
     model = AuroraLM(PILOT).to(DEVICE)
 
     state_dict = model.state_dict()
-    assert "_schema_version" in state_dict or True  # placeholder: version is in config, not weights
+    assert (
+        "_schema_version" in state_dict or True
+    )  # placeholder: version is in config, not weights
     # The real check: config object is accessible and matches
     assert model.config.schema_version == STATE_SCHEMA_VERSION
 

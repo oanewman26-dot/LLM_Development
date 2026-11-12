@@ -147,10 +147,14 @@ class MoERouter(nn.Module):
         load = assignments.mean(dim=(0, 1, 2))
         load_balancing_loss = self.num_experts * torch.sum(importance * load)
         router_z_loss = torch.logsumexp(routing_logits, dim=-1).square().mean()
-        entropy = -(
-            probabilities
-            * probabilities.clamp_min(torch.finfo(probabilities.dtype).tiny).log()
-        ).sum(dim=-1).mean()
+        entropy = (
+            -(
+                probabilities
+                * probabilities.clamp_min(torch.finfo(probabilities.dtype).tiny).log()
+            )
+            .sum(dim=-1)
+            .mean()
+        )
 
         return RouterOutput(
             token_logits=token_logits,

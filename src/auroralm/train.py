@@ -184,7 +184,9 @@ def resolve_device(requested: str) -> torch.device:
     if requested == "auto":
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if requested == "cuda" and not torch.cuda.is_available():
-        raise TrainingError("CUDA was requested, but torch.cuda.is_available() is false.")
+        raise TrainingError(
+            "CUDA was requested, but torch.cuda.is_available() is false."
+        )
     return torch.device(requested)
 
 
@@ -243,9 +245,7 @@ def load_training_contracts(
     tokenizer_dir = Path(tokenizer_dir)
     dataset_manifest_path = dataset_dir / DATASET_MANIFEST_FILENAME
     documents_path = dataset_dir / DOCUMENTS_FILENAME
-    tokenizer_manifest_path = (
-        tokenizer_dir / TOKENIZER_TRAINING_MANIFEST_FILENAME
-    )
+    tokenizer_manifest_path = tokenizer_dir / TOKENIZER_TRAINING_MANIFEST_FILENAME
 
     dataset_manifest = _read_json(dataset_manifest_path)
     outputs = dataset_manifest.get("outputs")
@@ -294,9 +294,7 @@ def load_training_contracts(
     contracts = TrainingContracts(
         training_mode=TRAINING_MODE,
         tokenizer_fingerprint=tokenizer.fingerprint,
-        tokenizer_training_manifest_sha256=sha256_file(
-            tokenizer_manifest_path
-        ),
+        tokenizer_training_manifest_sha256=sha256_file(tokenizer_manifest_path),
         dataset_manifest_sha256=sha256_file(dataset_manifest_path),
         documents_sha256=documents_hash,
         state_schema_version=schema_version,
@@ -379,8 +377,8 @@ class PackedTokenDataset(torch.utils.data.Dataset):
         self.split = split
         self.document_count = document_count
         self.block_count = block_count
-        self.trailing_tokens_dropped = (
-            len(token_ids) - (block_count * context_length + 1)
+        self.trailing_tokens_dropped = len(token_ids) - (
+            block_count * context_length + 1
         )
 
     @property
@@ -451,9 +449,7 @@ class DeterministicBatchSampler:
         if dataset_size < 1:
             raise ValueError("dataset_size must be positive.")
         if batch_size < 1 or batch_size > dataset_size:
-            raise ValueError(
-                "batch_size must be between 1 and the number of blocks."
-            )
+            raise ValueError("batch_size must be between 1 and the number of blocks.")
         self.dataset_size = dataset_size
         self.batch_size = batch_size
         self.generator = torch.Generator(device="cpu")
@@ -634,9 +630,7 @@ def _restore_rng_state(state: Mapping[str, Any]) -> None:
 
 def _runtime_contract() -> dict[str, str]:
     return {
-        "python_major_minor": (
-            f"{sys.version_info.major}.{sys.version_info.minor}"
-        ),
+        "python_major_minor": (f"{sys.version_info.major}.{sys.version_info.minor}"),
         "torch": torch.__version__.split("+", 1)[0],
         "tokenizers": importlib.metadata.version("tokenizers"),
     }
@@ -725,9 +719,10 @@ def resolve_resume_path(run_dir: Path, resume: str) -> Path:
     checkpoint_path = run_dir / name
     if not checkpoint_path.is_file():
         raise ContractError(f"Latest checkpoint is missing: {checkpoint_path}")
-    if not isinstance(expected_hash, str) or sha256_file(
-        checkpoint_path
-    ) != expected_hash:
+    if (
+        not isinstance(expected_hash, str)
+        or sha256_file(checkpoint_path) != expected_hash
+    ):
         raise ContractError("Latest checkpoint hash does not match latest.json.")
     return checkpoint_path
 
@@ -749,14 +744,10 @@ def resolve_initial_checkpoint(source: Path) -> tuple[Path, str]:
             )
         checkpoint_path = source / name
         if not checkpoint_path.is_file():
-            raise ContractError(
-                f"Initial checkpoint is missing: {checkpoint_path}"
-            )
+            raise ContractError(f"Initial checkpoint is missing: {checkpoint_path}")
         actual_hash = sha256_file(checkpoint_path)
         if actual_hash != expected_hash:
-            raise ContractError(
-                "Initial checkpoint hash does not match latest.json."
-            )
+            raise ContractError("Initial checkpoint hash does not match latest.json.")
         return checkpoint_path, actual_hash
     if not source.is_file():
         raise ContractError(f"Initial checkpoint does not exist: {source}")
@@ -789,9 +780,7 @@ def inspect_initial_checkpoint(
     if not isinstance(source_contract, dict):
         raise ContractError("Initial checkpoint contract is missing.")
     if source_contract.get("model_config") != asdict(model_config):
-        raise ContractError(
-            "Initial checkpoint model configuration has drifted."
-        )
+        raise ContractError("Initial checkpoint model configuration has drifted.")
     if source_contract.get("contracts") != asdict(contracts):
         raise ContractError(
             "Initial checkpoint data/tokenizer/schema contracts have drifted."
@@ -833,9 +822,7 @@ def load_checkpoint(
             weights_only=False,
         )
     except (OSError, RuntimeError, ValueError) as exc:
-        raise ContractError(
-            f"Could not load checkpoint {checkpoint_path}."
-        ) from exc
+        raise ContractError(f"Could not load checkpoint {checkpoint_path}.") from exc
     if not isinstance(checkpoint, dict):
         raise ContractError("Checkpoint payload is not a dictionary.")
     if checkpoint.get("checkpoint_format_version") != CHECKPOINT_FORMAT_VERSION:
@@ -868,9 +855,7 @@ def load_checkpoint(
 def _append_metric(path: Path, metric: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("ab") as handle:
-        handle.write(
-            (json.dumps(dict(metric), sort_keys=True) + "\n").encode("utf-8")
-        )
+        handle.write((json.dumps(dict(metric), sort_keys=True) + "\n").encode("utf-8"))
         handle.flush()
         os.fsync(handle.fileno())
 
@@ -901,10 +886,7 @@ def _prepare_run_directory(
         return
 
     existing_config = _read_json(run_config_path)
-    existing_contract = {
-        key: existing_config.get(key)
-        for key in contract
-    }
+    existing_contract = {key: existing_config.get(key) for key in contract}
     _require_exact_contract(
         contract,
         existing_contract,
@@ -962,12 +944,7 @@ def run_training(
     stop_after_step: Optional[int] = None,
 ) -> dict[str, Any]:
     validate_settings(settings)
-    if (
-        eval_every < 1
-        or eval_batches < 1
-        or checkpoint_every < 1
-        or progress_every < 1
-    ):
+    if eval_every < 1 or eval_batches < 1 or checkpoint_every < 1 or progress_every < 1:
         raise ValueError(
             "eval_every, eval_batches, checkpoint_every, and progress_every "
             "must be positive."
@@ -979,9 +956,7 @@ def run_training(
 
     resolved_amp = resolve_amp(settings.amp, device)
     if resolved_amp != settings.amp:
-        settings = TrainingSettings(
-            **{**asdict(settings), "amp": resolved_amp}
-        )
+        settings = TrainingSettings(**{**asdict(settings), "amp": resolved_amp})
     set_reproducible_seed(settings.seed, settings.deterministic)
 
     tokenizer, contracts = load_training_contracts(
@@ -1017,16 +992,10 @@ def run_training(
     if resume is not None:
         run_config_path = run_dir / RUN_CONFIG_FILENAME
         if not run_config_path.is_file():
-            raise ContractError(
-                f"Cannot resume without {run_config_path}."
-            )
-        stored_initialization = _read_json(run_config_path).get(
-            "initialization"
-        )
+            raise ContractError(f"Cannot resume without {run_config_path}.")
+        stored_initialization = _read_json(run_config_path).get("initialization")
         if not isinstance(stored_initialization, dict):
-            raise ContractError(
-                "Run contract has no valid initialization record."
-            )
+            raise ContractError("Run contract has no valid initialization record.")
         initialization = dict(stored_initialization)
     elif init_from is None:
         initialization = {
@@ -1102,8 +1071,7 @@ def run_training(
         f"parameters={total_parameters:,}; trainable={trainable_parameters:,}"
     )
     print(
-        f"Packed blocks: train={len(train_data):,}, "
-        f"validation={len(validation_data):,}"
+        f"Packed blocks: train={len(train_data):,}, validation={len(validation_data):,}"
     )
 
     metrics_path = run_dir / METRICS_FILENAME
@@ -1170,9 +1138,7 @@ def run_training(
             average_step_seconds = (
                 time.perf_counter() - progress_started
             ) / progress_steps
-            eta_seconds = (
-                settings.max_steps - completed_steps
-            ) * average_step_seconds
+            eta_seconds = (settings.max_steps - completed_steps) * average_step_seconds
             print(
                 format_progress(
                     completed_steps=completed_steps,
@@ -1202,9 +1168,7 @@ def run_training(
             )
             last_metrics["validation_loss"] = validation_loss
             last_metrics["validation_perplexity"] = (
-                math.exp(validation_loss)
-                if validation_loss < 50.0
-                else float("inf")
+                math.exp(validation_loss) if validation_loss < 50.0 else float("inf")
             )
             _append_metric(metrics_path, last_metrics)
             print(

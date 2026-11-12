@@ -38,17 +38,21 @@ class TestMoERouter(unittest.TestCase):
         without_state = router(hidden)
         with_state = router(hidden, prior)
 
-        self.assertTrue(torch.equal(with_state.state_bias, torch.zeros_like(
-            with_state.state_bias
-        )))
-        self.assertTrue(torch.equal(
-            with_state.routing_logits,
-            without_state.routing_logits,
-        ))
-        self.assertTrue(torch.equal(
-            with_state.expert_indices,
-            without_state.expert_indices,
-        ))
+        self.assertTrue(
+            torch.equal(with_state.state_bias, torch.zeros_like(with_state.state_bias))
+        )
+        self.assertTrue(
+            torch.equal(
+                with_state.routing_logits,
+                without_state.routing_logits,
+            )
+        )
+        self.assertTrue(
+            torch.equal(
+                with_state.expert_indices,
+                without_state.expert_indices,
+            )
+        )
 
     def test_state_prior_is_bounded_and_cannot_override_large_token_gap(self):
         router = MoERouter(
@@ -66,10 +70,12 @@ class TestMoERouter(unittest.TestCase):
         output = router(hidden, prior)
 
         self.assertLessEqual(float(output.state_bias.abs().max()), 0.25)
-        self.assertTrue(torch.equal(
-            output.expert_indices,
-            torch.zeros_like(output.expert_indices),
-        ))
+        self.assertTrue(
+            torch.equal(
+                output.expert_indices,
+                torch.zeros_like(output.expert_indices),
+            )
+        )
 
     def test_collapsed_routes_have_larger_balance_loss(self):
         router = MoERouter(2, 2, top_k=1)
@@ -77,12 +83,16 @@ class TestMoERouter(unittest.TestCase):
             router.token_router.weight.copy_(torch.eye(2))
             router.token_router.bias.zero_()
 
-        balanced = torch.tensor([[
-            [8.0, -8.0],
-            [-8.0, 8.0],
-            [8.0, -8.0],
-            [-8.0, 8.0],
-        ]])
+        balanced = torch.tensor(
+            [
+                [
+                    [8.0, -8.0],
+                    [-8.0, 8.0],
+                    [8.0, -8.0],
+                    [-8.0, 8.0],
+                ]
+            ]
+        )
         collapsed = torch.tensor([[[8.0, -8.0]] * 4])
 
         balanced_loss = router(balanced).load_balancing_loss

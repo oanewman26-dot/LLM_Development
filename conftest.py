@@ -15,9 +15,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 
 # Node ids of tests that take several seconds on CPU. Listed here because
 # tests/test_smoke.py must stay runnable as a plain script without pytest.
-SLOW_TESTS = frozenset({
-    "tests/test_smoke.py::test_gradient_flow",
-})
+SLOW_TESTS = frozenset(
+    {
+        "tests/test_smoke.py::test_gradient_flow",
+    }
+)
 
 
 def pytest_collection_modifyitems(config, items):

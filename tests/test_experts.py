@@ -36,13 +36,13 @@ class TestExpertPool(unittest.TestCase):
         self.assertEqual(output.hidden_states.shape, hidden.shape)
         self.assertEqual(output.expert_counts.shape, (config.num_experts,))
         self.assertTrue(torch.isfinite(output.hidden_states).all())
+        self.assertTrue(torch.all(output.active_assignments.any(dim=-1)))
         self.assertTrue(
-            torch.all(output.active_assignments.any(dim=-1))
+            torch.allclose(
+                output.normalized_weights.sum(dim=-1),
+                torch.ones(2, 5),
+            )
         )
-        self.assertTrue(torch.allclose(
-            output.normalized_weights.sum(dim=-1),
-            torch.ones(2, 5),
-        ))
 
     def test_capacity_overflow_uses_explicit_top_one_fallback(self):
         torch.manual_seed(22)
@@ -58,10 +58,12 @@ class TestExpertPool(unittest.TestCase):
         self.assertGreater(output.overflow_tokens, 0)
         self.assertGreater(output.dropped_assignments, 0)
         self.assertTrue(torch.all(output.active_assignments.any(dim=-1)))
-        self.assertTrue(torch.allclose(
-            output.normalized_weights.sum(dim=-1),
-            torch.ones(1, 6),
-        ))
+        self.assertTrue(
+            torch.allclose(
+                output.normalized_weights.sum(dim=-1),
+                torch.ones(1, 6),
+            )
+        )
         self.assertGreater(int(output.expert_counts[0]), output.capacity)
 
     def test_cloned_experts_preserve_dense_function_even_with_overflow(self):
