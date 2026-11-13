@@ -35,8 +35,9 @@ Never do any of these, whatever the task says:
    or loosened test, no new `# type: ignore`, `# noqa`, skip marker or lint
    exclusion added to get a green result. If a check is wrong, say so and fix
    the check in its own change.
-6. **Never commit to `main`, push to `main` or `staging`, force-push, or
-   merge a pull request.** Merging is the owner's decision.
+6. **Never commit to `main`, push to `main`, create any other branch,
+   force-push, or merge a pull request.** Moving `staging` into `main` is
+   the owner's decision.
 7. **Never start a training run, download a dataset or model, or call an
    outside service** unless the task asks for exactly that.
 
@@ -97,16 +98,18 @@ python -m pytest -q
 
 ## 6. Branches and commits
 
-- Branch from `staging`. Name the branch type, a slash, then a short topic.
-  Open the pull request into `staging`. Only `staging` is merged into `main`.
+- The repository has two branches, `main` and `staging`, and no others.
+  Commit on `staging` and push to `staging`. Do not create a topic branch,
+  locally or on GitHub. Once `staging` is tested, the owner merges it into
+  `main` through a pull request.
 - Commit subjects follow Conventional Commits and are checked by
   `scripts/check_commit.py`: a type from `feat`, `fix`, `docs`, `test`,
   `refactor`, `style`, `perf`, `build`, `ci`, `chore` or `revert`, an
   optional scope in brackets, a colon, and a summary of at most 72
   characters with no closing full stop.
-- One subsystem per commit and per pull request. Keep mechanical changes
+- One subsystem per commit. Keep mechanical changes
   (formatting, moves, renames) apart from behavioural ones.
-- Say in the pull request whether the change touches a public contract, a
+- Say in the commit message whether the change touches a public contract, a
   readiness gate or a reproducibility pin, or state that it touches none.
 
 ## 7. The state contract
@@ -125,7 +128,7 @@ python -m pytest -q
 ## 8. Protected files
 
 Change these only when the owner has asked for that specific change, and
-never in the same pull request as the code they govern:
+never in the same commit as the code they govern:
 
 - `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE`,
   `NOTICE`
@@ -142,12 +145,13 @@ A pipeline that proposes changes to this repository, including one that
 improves its own code or its own training, is an agent under every rule
 above, plus these:
 
-1. Its output is a pull request into `staging`, reviewed and merged by the
-   owner. It never merges, approves or deploys its own work.
+1. Its output is commits on `staging`, which the owner tests and merges
+   into `main`. It never merges, approves or deploys its own work.
 2. It never edits a protected file, and never edits the tests, gates or
    metrics that judge the change it is making.
-3. Each pull request states what was changed, why, what evidence supports it
-   and which checks were run, with their output. A claimed improvement names
+3. Each commit message states what was changed and why, and its report to
+   the owner gives the evidence and the checks that were run, with their
+   output. A claimed improvement names
    the metric, the baseline, the seed and the command that reproduces it.
 4. It never trains on, copies or exports private Aurora material.
 5. When a check or gate fails and the fix is outside the task, it stops and

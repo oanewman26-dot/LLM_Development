@@ -1,5 +1,5 @@
 <!-- Title: a Conventional Commits subject, e.g. "fix(scope): what changed".
-     Target `staging`; only `staging` is merged into `main`. -->
+     The only pull request is `staging` into `main`; no other branch is used. -->
 
 ## What and why
 
