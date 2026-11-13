@@ -23,11 +23,34 @@ mechanics and demonstrated research results.
    ```
 
    `python -m pre_commit install` runs the format, lint, type and compile
-   checks on every commit and the test suite before a push. `print()` is
+   checks on every commit, checks the commit message, and runs the test
+   suite before a push. `print()` is
    allowed only in the modules with a command-line entry point (listed in
    `pyproject.toml`).
 
 5. Update the README or roadmap when a public contract or milestone changes.
+
+## Commits and branches
+
+- **Branch from `staging`**, named `<type>/<short-topic>` (for example
+  `fix/readiness-gate-evidence`). Open a pull request back into `staging`;
+  `staging` is the integration branch and reaches `main` only through a
+  pull request. Nothing is committed directly to `main`: the pre-commit hook
+  refuses it locally, and `main` should stay protected on GitHub.
+- **Write [Conventional Commits](https://www.conventionalcommits.org/)**:
+  `type(optional-scope): summary`, with the type one of `feat`, `fix`,
+  `docs`, `test`, `refactor`, `style`, `perf`, `build`, `ci`, `chore` or
+  `revert`. Keep the subject to 72 characters with no closing full stop, and
+  put the reasoning in the body after a blank line. Add `!` before the colon
+  for a breaking change. The `commit-msg` hook and the "Commit messages" CI
+  job both run `scripts/check_commit.py`; the pull request title follows the
+  same form.
+- **One subsystem per commit and per pull request.** Split a change that
+  spans several modules into a commit for each, and keep
+  mechanical changes (formatting, renames, moves) apart from behavioural
+  ones. If a commit needs "and" in its subject, it is probably two commits.
+- Do not leave work in long-lived stashes or `recovery/*` branches. Push a
+  draft pull request instead, so unfinished work is visible and reviewed.
 
 Do not weaken readiness gates to make an experiment pass. A blocked gate is a
 valid result when its evidence is absent.
