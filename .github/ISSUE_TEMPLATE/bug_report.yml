@@ -1,0 +1,51 @@
+name: Bug report
+description: Something behaves differently from what the code or docs say.
+title: "fix: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not report vulnerabilities here; follow SECURITY.md.
+        Leave out private Aurora records, training corpora, checkpoints and credentials.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - model (NN, attention, MoE)
+        - state schema / encoding
+        - tokenizer or dataset
+        - training
+        - inference or sampling
+        - readiness gate / calibration
+        - CI, tooling or docs
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What happened
+      description: Include the exact error or log lines, with private content removed.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: The smallest sequence that shows it; a failing test is ideal.
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Revision
+      description: Output of `git rev-parse --short HEAD`, plus OS and Python version.
+    validations:
+      required: true
