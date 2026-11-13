@@ -9,12 +9,31 @@
 #     python -m pre_commit install
 #
 # Formatting, lint, type check and byte-compilation run on every commit; the
-# test suite runs before a push.
-default_install_hook_types: [pre-commit, pre-push]
+# test suite runs before a push. Phase 5 adds two policy hooks: commits made
+# directly on main are refused, and the message must follow Conventional
+# Commits (scripts/check_commit.py). Re-run the install after pulling this so
+# the commit-msg hook is registered.
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+# Hooks without their own `stages` keep running on commit and on push only.
+default_stages: [pre-commit, pre-push]
 
 repos:
   - repo: local
     hooks:
+      - id: no-commit-to-main
+        name: no direct commits to main
+        entry: python scripts/check_commit.py branch
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: conventional-commit
+        name: conventional commit message
+        entry: python scripts/check_commit.py message
+        language: system
+        stages: [commit-msg]
+
       - id: ruff-format
         name: ruff format
         entry: python -m ruff format --force-exclude
