@@ -6,8 +6,8 @@ from pathlib import Path
 
 import torch
 
-from config import AuroraLMConfig
-from inference import (
+from auroralm.config import AuroraLMConfig
+from auroralm.inference import (
     GenerationSettings,
     InferenceContractError,
     _current_runtime_contract,
@@ -16,9 +16,9 @@ from inference import (
     load_inference_session,
     validate_generation_settings,
 )
-from NN import AuroraLM
-from state_schema import SCHEMA_FINGERPRINT, SCHEMA_VERSION
-from tokenizer import BOS_TOKEN_ID, PAD_TOKEN_ID, UNK_TOKEN_ID, AuroraTokenizer
+from auroralm.NN import AuroraLM
+from auroralm.state_schema import SCHEMA_FINGERPRINT, SCHEMA_VERSION
+from auroralm.tokenizer import BOS_TOKEN_ID, PAD_TOKEN_ID, UNK_TOKEN_ID, AuroraTokenizer
 
 
 def _sha256(path: Path) -> str:

@@ -15,7 +15,7 @@ The trainer binds every run and checkpoint to:
 
 Example:
 
-    python train.py \
+    python -m auroralm.train \
         --run-dir runs/pilot_dense_v1 \
         --device auto
 """
@@ -40,9 +40,9 @@ from typing import Any, Iterator, Mapping, Optional, Sequence
 import torch
 import torch.nn.functional as F
 
-from config import PILOT, AuroraLMConfig
-from NN import AuroraLM
-from tokenizer import AuroraTokenizer
+from auroralm.config import PILOT, AuroraLMConfig
+from auroralm.NN import AuroraLM
+from auroralm.tokenizer import AuroraTokenizer
 
 
 TRAINER_FORMAT_VERSION = 1

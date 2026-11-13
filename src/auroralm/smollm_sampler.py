@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
-from dataset import clean_text, text_fingerprint
+from auroralm.dataset import clean_text, text_fingerprint
 
 
 DATASET_ID = "HuggingFaceTB/smollm-corpus"

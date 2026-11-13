@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auroralm"
+version = "0.1.0"
+description = "Experimental state-conditioned decoder-only language model."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+# Runtime and test dependencies are pinned in requirements.txt.
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = ["--strict-markers", "--strict-config"]
+markers = [
+    "slow: takes several seconds on CPU; deselect with -m 'not slow'",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["auroralm"]
+
+[tool.coverage.report]
+skip_covered = true
+exclude_also = [
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]

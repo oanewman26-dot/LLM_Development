@@ -1,6 +1,6 @@
 import unittest
 
-from smollm_sampler import (
+from auroralm.smollm_sampler import (
     SourceSpec,
     deterministic_page_indices,
     sample_source,

@@ -14,7 +14,7 @@ with EMOTION_WORDS in Aurora's live emotion_nodes.py.
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
-from state_schema import (
+from auroralm.state_schema import (
     EMOTION_NAMES,
     EMOTION_COUNT,
     SCHEMA_VERSION,

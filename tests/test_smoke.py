@@ -4,8 +4,8 @@ tests/test_smoke.py
 Reproducible smoke tests for AuroraLM.
 
 Run with:
-    python test_smoke.py              # direct execution (file is in project root)
-    python -m pytest test_smoke.py -v # pytest
+    python tests/test_smoke.py              # direct execution
+    python -m pytest tests/test_smoke.py -v # pytest
 
 All tests must pass before cloud compute is authorised.
 """
@@ -13,14 +13,17 @@ All tests must pass before cloud compute is authorised.
 import sys
 import os
 
-# Allow imports from project root regardless of where pytest is invoked
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Allow imports from src/ regardless of where the file is invoked from
+sys.path.insert(
+    0,
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"),
+)
 
 import torch
 import torch.nn.functional as F
 
-from config import PILOT, CONTROL_PILOT, STATE_SCHEMA_VERSION
-from NN import AuroraLM
+from auroralm.config import PILOT, CONTROL_PILOT, STATE_SCHEMA_VERSION
+from auroralm.NN import AuroraLM
 
 
 # ---------------------------------------------------------------------------
@@ -54,13 +57,13 @@ def dummy_batch(config, batch_size=2, seq_len=16):
 
 def test_imports():
     """All core modules import without error."""
-    import config
-    import NN
-    import transformer_block
-    import rotary_position_embedding
-    import feetforward
-    import RSMnorm
-    import state_encoder
+    from auroralm import config
+    from auroralm import NN
+    from auroralm import transformer_block
+    from auroralm import rotary_position_embedding
+    from auroralm import feetforward
+    from auroralm import RSMnorm
+    from auroralm import state_encoder
     assert config.STATE_SCHEMA_VERSION == STATE_SCHEMA_VERSION
 
 
@@ -285,7 +288,7 @@ def test_causal_mask():
 
 def test_state_encoder_shapes():
     """StateEncoder returns (batch, state_size) and optional (batch, num_experts)."""
-    from state_encoder import StateEncoder
+    from auroralm.state_encoder import StateEncoder
 
     batch = 3
     encoder = StateEncoder(

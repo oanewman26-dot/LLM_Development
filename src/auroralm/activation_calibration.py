@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-from state_schema import AuroraState171, SCHEMA_FINGERPRINT, SCHEMA_VERSION
+from auroralm.state_schema import AuroraState171, SCHEMA_FINGERPRINT, SCHEMA_VERSION
 
 
 CALIBRATION_FORMAT_VERSION = 1

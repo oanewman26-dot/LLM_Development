@@ -27,8 +27,8 @@ from math import isfinite
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
-from config import REGULATOR_NAMES, REGULATOR_RANGES
-from state_schema import AuroraState171
+from auroralm.config import REGULATOR_NAMES, REGULATOR_RANGES
+from auroralm.state_schema import AuroraState171
 
 
 DATASET_FORMAT_VERSION = 1

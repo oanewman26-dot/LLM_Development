@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from tokenizer import (
+from auroralm.tokenizer import (
     BOS_TOKEN_ID,
     EOS_TOKEN_ID,
     PAD_TOKEN_ID,

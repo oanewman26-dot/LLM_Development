@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 
-from config import AuroraLMConfig
-from RSMnorm import RMSNorm
-from transformer_block import TransformerBlock
-from state_encoder import StateEncoder
+from auroralm.config import AuroraLMConfig
+from auroralm.RSMnorm import RMSNorm
+from auroralm.transformer_block import TransformerBlock
+from auroralm.state_encoder import StateEncoder
 
 
 class AuroraLM(nn.Module):

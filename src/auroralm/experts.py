@@ -16,8 +16,8 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from feetforward import SwiGLU
-from moe_router import MoERouter, RouterOutput
+from auroralm.feetforward import SwiGLU
+from auroralm.moe_router import MoERouter, RouterOutput
 
 
 @dataclass(frozen=True)

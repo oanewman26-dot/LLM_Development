@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from moe_router import MoERouter
+from auroralm.moe_router import MoERouter
 
 
 class TestMoERouter(unittest.TestCase):
