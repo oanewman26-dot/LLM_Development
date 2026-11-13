@@ -20,6 +20,8 @@ REQUIRED_FILES = (
     "NOTICE",
     "THIRD_PARTY_NOTICES.md",
     "CONTRIBUTING.md",
+    "AGENTS.md",
+    "CLAUDE.md",
     "SECURITY.md",
     "CITATION.cff",
     ".gitignore",
