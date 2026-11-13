@@ -12,6 +12,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  commits:
+    # Every commit a pull request adds must follow Conventional Commits
+    # (CONTRIBUTING.md). Merge commits are skipped.
+    name: Commit messages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check commit subjects
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 scripts/check_commit.py range "$BASE_SHA..$HEAD_SHA"
+
   test:
     name: Python 3.12 / CPU
     runs-on: ubuntu-latest
