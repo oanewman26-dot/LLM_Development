@@ -15,9 +15,17 @@ mechanics and demonstrated research results.
 
    ```bash
    python -m pip check
+   python -m ruff format .
+   python -m ruff check .
+   python -m mypy
    python -m compileall -q .
    python -m pytest -q
    ```
+
+   `python -m pre_commit install` runs the format, lint, type and compile
+   checks on every commit and the test suite before a push. `print()` is
+   allowed only in the modules with a command-line entry point (listed in
+   `pyproject.toml`).
 
 5. Update the README or roadmap when a public contract or milestone changes.
 

@@ -137,9 +137,7 @@ class TestInference(unittest.TestCase):
         self.assertEqual(first.text, second.text)
         self.assertEqual(first.generated_tokens, 6)
         self.assertFalse(
-            {PAD_TOKEN_ID, BOS_TOKEN_ID, UNK_TOKEN_ID}.intersection(
-                first.token_ids
-            )
+            {PAD_TOKEN_ID, BOS_TOKEN_ID, UNK_TOKEN_ID}.intersection(first.token_ids)
         )
 
     def test_long_prompt_is_safely_truncated_to_context(self):
@@ -179,9 +177,7 @@ class TestInference(unittest.TestCase):
         )
         payload["contract"]["runtime_contract"]["torch"] = "0.0.0"
         torch.save(payload, checkpoint)
-        latest = json.loads(
-            (self.run_dir / "latest.json").read_text(encoding="utf-8")
-        )
+        latest = json.loads((self.run_dir / "latest.json").read_text(encoding="utf-8"))
         latest["sha256"] = _sha256(checkpoint)
         (self.run_dir / "latest.json").write_text(
             json.dumps(latest) + "\n",
@@ -213,9 +209,7 @@ class TestInference(unittest.TestCase):
 
     def test_invalid_generation_settings_are_rejected(self):
         with self.assertRaises(ValueError):
-            validate_generation_settings(
-                GenerationSettings(max_new_tokens=0)
-            )
+            validate_generation_settings(GenerationSettings(max_new_tokens=0))
 
 
 if __name__ == "__main__":

@@ -1,10 +1,9 @@
-import torch
 import torch.nn as nn
 
 from auroralm.config import AuroraLMConfig
 from auroralm.RSMnorm import RMSNorm
-from auroralm.transformer_block import TransformerBlock
 from auroralm.state_encoder import StateEncoder
+from auroralm.transformer_block import TransformerBlock
 
 
 class AuroraLM(nn.Module):
@@ -31,14 +30,11 @@ class AuroraLM(nn.Module):
 
         self.config = config
 
-        self.embedding = nn.Embedding(
-            config.vocab_size,
-            config.hidden_size
-        )
+        self.embedding = nn.Embedding(config.vocab_size, config.hidden_size)
 
         # State encoder: compresses 171-dim source state to block latents
         if config.state_size > 0:
-            self.state_encoder = StateEncoder(
+            self.state_encoder: StateEncoder | None = StateEncoder(
                 source_dim=config.source_state_dim,
                 regulator_dim=config.regulator_dim,
                 state_size=config.state_size,
@@ -50,19 +46,12 @@ class AuroraLM(nn.Module):
             self.state_encoder = None
 
         self.blocks = nn.ModuleList(
-            [
-                TransformerBlock(config)
-                for _ in range(config.num_layers)
-            ]
+            [TransformerBlock(config) for _ in range(config.num_layers)]
         )
 
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-        self.output = nn.Linear(
-            config.hidden_size,
-            config.vocab_size,
-            bias=False
-        )
+        self.output = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
     def forward(self, tokens, aurora_state=None, *, return_routing=False):
         """

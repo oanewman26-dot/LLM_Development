@@ -123,9 +123,7 @@ class TestReadinessGate(unittest.TestCase):
                 result["stateful_turns"]["valid_rows"],
                 0,
             )
-            self.assertFalse(
-                result["calibration"]["config_value_valid"]
-            )
+            self.assertFalse(result["calibration"]["config_value_valid"])
 
     def test_exact_state_data_and_frozen_calibration_can_pass(self):
         with tempfile.TemporaryDirectory() as temporary:

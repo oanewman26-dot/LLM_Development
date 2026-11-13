@@ -26,9 +26,9 @@ import hashlib
 import json
 import os
 import sys
+from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Union
-
+from typing import Any
 
 TOKENIZER_FORMAT_VERSION = 1
 TOKENIZER_FILENAME = "tokenizer.json"
@@ -107,7 +107,7 @@ class AuroraTokenizer:
         self,
         backend: Any,
         *,
-        artifact_fingerprint: Optional[str] = None,
+        artifact_fingerprint: str | None = None,
     ):
         self._backend = backend
         self._artifact_fingerprint = artifact_fingerprint
@@ -121,8 +121,8 @@ class AuroraTokenizer:
         vocab_size: int = DEFAULT_VOCAB_SIZE,
         min_frequency: int = 2,
         show_progress: bool = True,
-        length: Optional[int] = None,
-    ) -> "AuroraTokenizer":
+        length: int | None = None,
+    ) -> AuroraTokenizer:
         """
         Train byte-level BPE merges from an iterable of text samples.
 
@@ -210,7 +210,7 @@ class AuroraTokenizer:
         return tokenizer
 
     @classmethod
-    def load(cls, directory: Union[str, Path]) -> "AuroraTokenizer":
+    def load(cls, directory: str | Path) -> AuroraTokenizer:
         """Load and validate a saved Aurora tokenizer directory."""
         _require_tokenizers()
         from tokenizers import Tokenizer
@@ -270,11 +270,8 @@ class AuroraTokenizer:
         return self._backend.get_vocab_size(with_added_tokens=True)
 
     @property
-    def special_token_ids(self) -> Dict[str, int]:
-        return {
-            token: self._backend.token_to_id(token)
-            for token in SPECIAL_TOKENS
-        }
+    def special_token_ids(self) -> dict[str, int]:
+        return {token: self._backend.token_to_id(token) for token in SPECIAL_TOKENS}
 
     @property
     def fingerprint(self) -> str:
@@ -294,10 +291,10 @@ class AuroraTokenizer:
                 f"{SPECIAL_TOKEN_IDS}, got {actual}."
             )
 
-    def token_to_id(self, token: str) -> Optional[int]:
+    def token_to_id(self, token: str) -> int | None:
         return self._backend.token_to_id(token)
 
-    def id_to_token(self, token_id: int) -> Optional[str]:
+    def id_to_token(self, token_id: int) -> str | None:
         return self._backend.id_to_token(token_id)
 
     def encode(
@@ -305,9 +302,9 @@ class AuroraTokenizer:
         text: str,
         *,
         add_special_tokens: bool = True,
-        max_length: Optional[int] = None,
+        max_length: int | None = None,
         truncation: bool = False,
-    ) -> List[int]:
+    ) -> list[int]:
         """
         Encode one string.
 
@@ -322,12 +319,14 @@ class AuroraTokenizer:
         if truncation and max_length is None:
             raise ValueError("truncation=True requires max_length.")
 
-        content_ids = list(
-            self._backend.encode(text, add_special_tokens=False).ids
-        )
+        content_ids = list(self._backend.encode(text, add_special_tokens=False).ids)
         special_count = 2 if add_special_tokens else 0
 
-        if truncation and len(content_ids) + special_count > max_length:
+        if (
+            truncation
+            and max_length is not None
+            and len(content_ids) + special_count > max_length
+        ):
             content_budget = max_length - special_count
             if content_budget < 0:
                 raise ValueError(
@@ -357,10 +356,10 @@ class AuroraTokenizer:
         texts: Iterable[str],
         *,
         add_special_tokens: bool = True,
-        max_length: Optional[int] = None,
+        max_length: int | None = None,
         truncation: bool = False,
         padding: bool = False,
-    ) -> Dict[str, List[List[int]]]:
+    ) -> dict[str, list[list[int]]]:
         """
         Encode a batch and return framework-neutral IDs and attention masks.
 
@@ -394,8 +393,8 @@ class AuroraTokenizer:
         else:
             target_length = None
 
-        input_ids: List[List[int]] = []
-        attention_mask: List[List[int]] = []
+        input_ids: list[list[int]] = []
+        attention_mask: list[list[int]] = []
         for sequence in sequences:
             if target_length is None:
                 input_ids.append(sequence)
@@ -411,7 +410,7 @@ class AuroraTokenizer:
             "attention_mask": attention_mask,
         }
 
-    def save(self, directory: Union[str, Path]) -> None:
+    def save(self, directory: str | Path) -> None:
         """Atomically save the standard tokenizer JSON and Aurora metadata."""
         directory = Path(directory)
         tokenizer_bytes = self._serialised_backend()
@@ -424,9 +423,9 @@ class AuroraTokenizer:
             "add_bos_eos": True,
             "fingerprint": fingerprint,
         }
-        metadata_bytes = (
-            json.dumps(metadata, indent=2, sort_keys=True) + "\n"
-        ).encode("utf-8")
+        metadata_bytes = (json.dumps(metadata, indent=2, sort_keys=True) + "\n").encode(
+            "utf-8"
+        )
 
         _atomic_write(directory / TOKENIZER_FILENAME, tokenizer_bytes)
         _atomic_write(directory / METADATA_FILENAME, metadata_bytes)
@@ -449,7 +448,7 @@ class AuroraTokenizer:
             )
 
 
-def iter_text_files(paths: Sequence[Union[str, Path]]) -> Iterator[str]:
+def iter_text_files(paths: Sequence[str | Path]) -> Iterator[str]:
     """
     Stream UTF-8 text files line by line for bounded-memory training.
 
@@ -522,7 +521,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
 
     if args.command == "train":

@@ -12,15 +12,13 @@ with EMOTION_WORDS in Aurora's live emotion_nodes.py.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
 
 from auroralm.state_schema import (
-    EMOTION_NAMES,
     EMOTION_COUNT,
-    SCHEMA_VERSION,
+    EMOTION_NAMES,
     SCHEMA_FINGERPRINT,
+    SCHEMA_VERSION,
 )
-
 
 # ---------------------------------------------------------------------------
 # State schema version
@@ -36,7 +34,7 @@ STATE_SCHEMA_VERSION = SCHEMA_VERSION
 # Ordering comes straight from state_schema.EMOTION_NAMES. Never rebuild this
 # list by hand — a reorder here silently teaches the model the wrong emotion.
 
-STATE_DIMENSIONS: List[str] = list(EMOTION_NAMES)
+STATE_DIMENSIONS: list[str] = list(EMOTION_NAMES)
 
 if len(STATE_DIMENSIONS) != EMOTION_COUNT:
     raise RuntimeError(
@@ -47,12 +45,12 @@ if len(STATE_DIMENSIONS) != EMOTION_COUNT:
 # Thalamic activation scores are non-negative and are scaled by a single
 # calibration ceiling (see state_schema.normalised_values), not per-dimension
 # min/max. Every dimension therefore shares the same post-normalisation range.
-STATE_RANGES: Dict[str, Tuple[float, float]] = {
+STATE_RANGES: dict[str, tuple[float, float]] = {
     name: (0.0, 1.0) for name in STATE_DIMENSIONS
 }
 
 # A missing node means "did not fire", which is zero, not "unknown".
-STATE_DEFAULTS: Dict[str, float] = {name: 0.0 for name in STATE_DIMENSIONS}
+STATE_DEFAULTS: dict[str, float] = {name: 0.0 for name in STATE_DIMENSIONS}
 
 # Frozen from a privacy-safe aggregate calibration using the maximum observed
 # positive activation with no clipping. The public receipt is tracked at
@@ -68,7 +66,7 @@ ACTIVATION_CEILING: float = 0.88
 # sleep-pressure accumulator, and the prefrontal confidence signal. They get
 # their own small vector so they cannot be confused with thalamic activations.
 
-REGULATOR_NAMES: Tuple[str, ...] = (
+REGULATOR_NAMES: tuple[str, ...] = (
     "tension",
     "coherence",
     "sleep_pressure",
@@ -86,28 +84,27 @@ REGULATOR_COUNT: int = len(REGULATOR_NAMES)
 
 # Unlike the emotion nodes, these have meaningful per-dimension ranges and are
 # clamped individually rather than scaled by one shared ceiling.
-REGULATOR_RANGES: Dict[str, Tuple[float, float]] = {
-    "tension":           (0.0, 1.0),
-    "coherence":         (0.0, 1.0),
-    "sleep_pressure":    (0.0, 1.0),
-    "salience":          (0.0, 1.0),
-    "novelty":           (0.0, 1.0),
-    "confidence":        (0.0, 1.0),
+REGULATOR_RANGES: dict[str, tuple[float, float]] = {
+    "tension": (0.0, 1.0),
+    "coherence": (0.0, 1.0),
+    "sleep_pressure": (0.0, 1.0),
+    "salience": (0.0, 1.0),
+    "novelty": (0.0, 1.0),
+    "confidence": (0.0, 1.0),
     "dominant_valence": (-1.0, 1.0),
-    "arousal":           (0.0, 1.0),
-    "dominance":         (0.0, 1.0),
+    "arousal": (0.0, 1.0),
+    "dominance": (0.0, 1.0),
     "withdrawal_signal": (0.0, 1.0),
-    "safety_margin":     (0.0, 1.0),
+    "safety_margin": (0.0, 1.0),
 }
 
-REGULATOR_DEFAULTS: Dict[str, float] = {
-    name: 0.0 for name in REGULATOR_NAMES
-}
+REGULATOR_DEFAULTS: dict[str, float] = {name: 0.0 for name in REGULATOR_NAMES}
 
 
 # ---------------------------------------------------------------------------
 # Model configurations
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class AuroraLMConfig:
@@ -130,18 +127,18 @@ class AuroraLMConfig:
     hidden_size: int = 256
     num_layers: int = 6
     num_attention_heads: int = 8
-    num_kv_heads: int = 2          # grouped-query attention
-    intermediate_size: int = 688   # SwiGLU hidden dim (~2.7x hidden_size)
+    num_kv_heads: int = 2  # grouped-query attention
+    intermediate_size: int = 688  # SwiGLU hidden dim (~2.7x hidden_size)
 
     # --- State conditioning ---
-    source_state_dim: int = EMOTION_COUNT   # always 171, from state_schema
-    regulator_dim: int = REGULATOR_COUNT     # scalar drives, 0 = disabled
-    state_size: int = 16                    # compressed latent dim; 0 = disabled
-    state_hidden_dim: int = 64              # encoder trunk width
+    source_state_dim: int = EMOTION_COUNT  # always 171, from state_schema
+    regulator_dim: int = REGULATOR_COUNT  # scalar drives, 0 = disabled
+    state_size: int = 16  # compressed latent dim; 0 = disabled
+    state_hidden_dim: int = 64  # encoder trunk width
     state_dropout: float = 0.0
 
     # --- MoE (optional) ---
-    num_experts: int = 0           # 0 = dense FFN, no MoE
+    num_experts: int = 0  # 0 = dense FFN, no MoE
     top_k_experts: int = 2
     expert_capacity_factor: float = 1.0
 
@@ -170,15 +167,15 @@ class AuroraLMConfig:
         # Attention per layer (QKV + output)
         head_dim = self.hidden_size // self.num_attention_heads
         attn = (
-            self.hidden_size * self.num_attention_heads * head_dim      # Q
-            + self.hidden_size * self.num_kv_heads * head_dim * 2       # K + V
-            + self.hidden_size * self.hidden_size                       # output
+            self.hidden_size * self.num_attention_heads * head_dim  # Q
+            + self.hidden_size * self.num_kv_heads * head_dim * 2  # K + V
+            + self.hidden_size * self.hidden_size  # output
         )
 
         # FFN per layer (SwiGLU: gate + up + down)
         ffn = (
-            self.hidden_size * self.intermediate_size * 2               # gate + up
-            + self.intermediate_size * self.hidden_size                 # down
+            self.hidden_size * self.intermediate_size * 2  # gate + up
+            + self.intermediate_size * self.hidden_size  # down
         )
         if self.num_experts > 0:
             # One independent SwiGLU per expert plus the token router.
@@ -194,8 +191,10 @@ class AuroraLMConfig:
         if self.state_size > 0:
             # StateConditioner MLP: state_size -> hidden_size -> 2*hidden_size
             cond = (
-                self.state_size * self.hidden_size + self.hidden_size
-                + self.hidden_size * (2 * self.hidden_size) + (2 * self.hidden_size)
+                self.state_size * self.hidden_size
+                + self.hidden_size
+                + self.hidden_size * (2 * self.hidden_size)
+                + (2 * self.hidden_size)
             )
             cond_total = 2 * cond  # one for attn, one for ffn
         else:
@@ -212,13 +211,13 @@ class AuroraLMConfig:
         if self.state_size > 0:
             trunk_in = self.source_state_dim + self.regulator_dim
             state_enc = (
-                trunk_in * self.state_hidden_dim + self.state_hidden_dim
-                + self.state_hidden_dim * self.state_size + self.state_size
+                trunk_in * self.state_hidden_dim
+                + self.state_hidden_dim
+                + self.state_hidden_dim * self.state_size
+                + self.state_size
             )
             if self.num_experts > 0:
-                state_enc += (
-                    self.state_hidden_dim * self.num_experts + self.num_experts
-                )
+                state_enc += self.state_hidden_dim * self.num_experts + self.num_experts
         else:
             state_enc = 0
 

@@ -27,6 +27,7 @@ REQUIRED_FILES = (
     ".github/workflows/ci.yml",
     ".github/dependabot.yml",
     "pyproject.toml",
+    ".pre-commit-config.yaml",
     "conftest.py",
     "requirements.txt",
     "src/auroralm/__init__.py",
@@ -37,42 +38,57 @@ REQUIRED_DIRS = ("src/auroralm", "tests", "docs")
 ROOT_PYTHON_FILES = frozenset({"conftest.py"})
 
 # A tracked path may not contain any of these directory names.
-FORBIDDEN_DIRS = frozenset({
-    ".venv",
-    "venv",
-    "env",
-    "node_modules",
-    "__pycache__",
-    ".pytest_cache",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".vscode",
-    ".idea",
-    ".obsidian",
-    ".claude",
-    "htmlcov",
-    "build",
-    "dist",
-    "data",
-    "datasets",
-    "runs",
-    "checkpoints",
-    "wandb",
-})
-
-FORBIDDEN_SUFFIXES = (
-    ".pyc", ".pyo", ".pt", ".pth", ".ckpt", ".safetensors", ".gguf", ".bin",
-    ".odt", ".ods", ".tmp", ".log", ".bak",
+FORBIDDEN_DIRS = frozenset(
+    {
+        ".venv",
+        "venv",
+        "env",
+        "node_modules",
+        "__pycache__",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".vscode",
+        ".idea",
+        ".obsidian",
+        ".claude",
+        "htmlcov",
+        "build",
+        "dist",
+        "data",
+        "datasets",
+        "runs",
+        "checkpoints",
+        "wandb",
+    }
 )
 
-FORBIDDEN_NAMES = frozenset({
-    ".env",
-    ".coverage",
-    "coverage.xml",
-    ".DS_Store",
-    "Thumbs.db",
-    "workspace.json",
-})
+FORBIDDEN_SUFFIXES = (
+    ".pyc",
+    ".pyo",
+    ".pt",
+    ".pth",
+    ".ckpt",
+    ".safetensors",
+    ".gguf",
+    ".bin",
+    ".odt",
+    ".ods",
+    ".tmp",
+    ".log",
+    ".bak",
+)
+
+FORBIDDEN_NAMES = frozenset(
+    {
+        ".env",
+        ".coverage",
+        "coverage.xml",
+        ".DS_Store",
+        "Thumbs.db",
+        "workspace.json",
+    }
+)
 
 
 def _tracked_files() -> list[str]:

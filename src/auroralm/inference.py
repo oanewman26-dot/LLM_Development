@@ -12,13 +12,13 @@ import argparse
 import hashlib
 import importlib.metadata
 import json
-import math
 import re
 import sys
 import time
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Optional, Sequence
+from typing import Any
 
 import torch
 
@@ -32,7 +32,6 @@ from auroralm.tokenizer import (
     UNK_TOKEN_ID,
     AuroraTokenizer,
 )
-
 
 INFERENCE_FORMAT_VERSION = 1
 SUPPORTED_CHECKPOINT_FORMAT_VERSION = 1
@@ -126,9 +125,7 @@ def _read_json(path: Path) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise InferenceContractError(
-            f"Could not read valid JSON from {path}."
-        ) from exc
+        raise InferenceContractError(f"Could not read valid JSON from {path}.") from exc
     if not isinstance(value, dict):
         raise InferenceContractError(f"Expected a JSON object in {path}.")
     return value
@@ -144,7 +141,7 @@ def resolve_device(requested: str) -> torch.device:
     return torch.device(requested)
 
 
-def resolve_checkpoint(path: Path) -> tuple[Path, Optional[str]]:
+def resolve_checkpoint(path: Path) -> tuple[Path, str | None]:
     path = Path(path)
     if path.is_dir():
         latest_path = path / "latest.json"
@@ -180,9 +177,7 @@ def resolve_checkpoint(path: Path) -> tuple[Path, Optional[str]]:
 
 def _current_runtime_contract() -> dict[str, str]:
     return {
-        "python_major_minor": (
-            f"{sys.version_info.major}.{sys.version_info.minor}"
-        ),
+        "python_major_minor": (f"{sys.version_info.major}.{sys.version_info.minor}"),
         "torch": torch.__version__.split("+", 1)[0],
         "tokenizers": importlib.metadata.version("tokenizers"),
     }
@@ -228,10 +223,7 @@ def load_inference_session(
         ) from exc
     if not isinstance(payload, dict):
         raise InferenceContractError("Checkpoint payload is not a dictionary.")
-    if (
-        payload.get("checkpoint_format_version")
-        != SUPPORTED_CHECKPOINT_FORMAT_VERSION
-    ):
+    if payload.get("checkpoint_format_version") != SUPPORTED_CHECKPOINT_FORMAT_VERSION:
         raise InferenceContractError("Unsupported checkpoint format version.")
 
     contract = payload.get("contract")
@@ -256,8 +248,7 @@ def load_inference_session(
         config.schema_version != SCHEMA_VERSION
         or config.schema_fingerprint != SCHEMA_FINGERPRINT
         or training_contracts.get("state_schema_version") != SCHEMA_VERSION
-        or training_contracts.get("state_schema_fingerprint")
-        != SCHEMA_FINGERPRINT
+        or training_contracts.get("state_schema_fingerprint") != SCHEMA_FINGERPRINT
     ):
         raise InferenceContractError(
             "Checkpoint state schema does not match the current Aurora schema."
@@ -265,10 +256,7 @@ def load_inference_session(
 
     tokenizer = AuroraTokenizer.load(tokenizer_dir)
     tokenizer.validate_config(config)
-    if (
-        training_contracts.get("tokenizer_fingerprint")
-        != tokenizer.fingerprint
-    ):
+    if training_contracts.get("tokenizer_fingerprint") != tokenizer.fingerprint:
         raise InferenceContractError(
             "Checkpoint tokenizer fingerprint does not match the artifact."
         )
@@ -309,9 +297,7 @@ def validate_generation_settings(settings: GenerationSettings) -> None:
     if settings.max_new_tokens < 1:
         raise ValueError("max_new_tokens must be at least 1.")
     if not 0 <= settings.min_new_tokens <= settings.max_new_tokens:
-        raise ValueError(
-            "min_new_tokens must be between 0 and max_new_tokens."
-        )
+        raise ValueError("min_new_tokens must be between 0 and max_new_tokens.")
     if settings.temperature < 0.0:
         raise ValueError("temperature cannot be negative.")
     if settings.top_k < 0:
@@ -331,9 +317,7 @@ def _apply_repetition_penalty(
         return
     for token_id in set(previous_ids):
         value = logits[token_id]
-        logits[token_id] = (
-            value * penalty if value < 0 else value / penalty
-        )
+        logits[token_id] = value * penalty if value < 0 else value / penalty
 
 
 def _sample_token(
@@ -461,11 +445,7 @@ def repetition_metrics(token_ids: Sequence[int]) -> dict[str, float]:
         tuple(token_ids[index : index + 3])
         for index in range(max(0, len(token_ids) - 2))
     ]
-    repeated = (
-        1.0 - len(set(trigrams)) / len(trigrams)
-        if trigrams
-        else 0.0
-    )
+    repeated = 1.0 - len(set(trigrams)) / len(trigrams) if trigrams else 0.0
     return {
         "distinct_token_ratio": distinct,
         "repeated_trigram_ratio": repeated,
@@ -500,10 +480,10 @@ def audit_exact_shingles(
             if not line.strip():
                 continue
             record = json.loads(line)
-            text = record.get("text") if isinstance(record, dict) else None
-            if not isinstance(text, str):
+            document = record.get("text") if isinstance(record, dict) else None
+            if not isinstance(document, str):
                 continue
-            words = _normalised_words(text)
+            words = _normalised_words(document)
             document_shingles = {
                 tuple(words[index : index + shingle_words])
                 for index in range(len(words) - shingle_words + 1)
@@ -523,7 +503,7 @@ def run_qualitative_suite(
     prompts: Sequence[Mapping[str, str]],
     settings: GenerationSettings,
     *,
-    audit_documents: Optional[Path] = None,
+    audit_documents: Path | None = None,
 ) -> dict[str, Any]:
     results = []
     for index, item in enumerate(prompts):
@@ -629,7 +609,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     device = resolve_device(args.device)
     session = load_inference_session(

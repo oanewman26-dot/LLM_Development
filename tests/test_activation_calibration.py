@@ -41,13 +41,11 @@ class ActivationCalibrationTests(unittest.TestCase):
             values_a[0] = 0.5
             values_b[1] = 0.75
             first.write_text(
-                json.dumps(_record("2026-07-31T00:00:00+00:00", values_a))
-                + "\n",
+                json.dumps(_record("2026-07-31T00:00:00+00:00", values_a)) + "\n",
                 encoding="utf-8",
             )
             second.write_text(
-                json.dumps(_record("2026-07-31T00:01:00+00:00", values_b))
-                + "\n",
+                json.dumps(_record("2026-07-31T00:01:00+00:00", values_b)) + "\n",
                 encoding="utf-8",
             )
 

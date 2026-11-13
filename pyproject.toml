@@ -34,3 +34,40 @@ exclude_also = [
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
 ]
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E4", "E7", "E9", # pycodestyle errors the formatter does not already settle
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # import order
+    "B",   # bugbear
+    "UP",  # pyupgrade
+    "T20", # print(): only the command-line entry points below may print
+]
+ignore = [
+    # zip() over sequences built together; adding strict= would change behaviour.
+    "B905",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Modules with a command-line entry point; their printed output is the interface.
+"src/auroralm/activation_calibration.py" = ["T20"]
+"src/auroralm/dataset.py" = ["T20"]
+"src/auroralm/inference.py" = ["T20"]
+"src/auroralm/readiness_gate.py" = ["T20"]
+"src/auroralm/smollm_sampler.py" = ["T20"]
+"src/auroralm/tokenizer.py" = ["T20"]
+"src/auroralm/train.py" = ["T20"]
+# The smoke test doubles as a runnable script and reports as it goes.
+"tests/test_smoke.py" = ["T20"]
+
+[tool.mypy]
+python_version = "3.10"
+mypy_path = "src"
+files = ["src/auroralm"]
+warn_unused_ignores = true
+warn_redundant_casts = true
