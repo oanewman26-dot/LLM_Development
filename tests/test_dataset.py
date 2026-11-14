@@ -9,6 +9,7 @@ from auroralm.state_schema import (
     EMOTION_COUNT,
     SCHEMA_FINGERPRINT,
     SCHEMA_VERSION,
+    STATE_SOURCE,
 )
 
 
@@ -21,7 +22,7 @@ def valid_state_record():
         "schema_version": SCHEMA_VERSION,
         "schema_fingerprint": SCHEMA_FINGERPRINT,
         "captured_at": "2026-07-27T12:00:00+00:00",
-        "source": "thalamus",
+        "source": STATE_SOURCE,
         "values": [0.0] * EMOTION_COUNT,
     }
 

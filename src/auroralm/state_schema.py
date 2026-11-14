@@ -1,11 +1,24 @@
 """Versioned state contract for AuroraLM.
 
-Aurora's thalamus produces sparse activations over the same 171 emotion nodes
-defined by ``emotion_nodes.EMOTION_WORDS`` in the live Aurora system.  This
-module fixes their order, validates a turn's state, and serialises it safely for
-datasets and checkpoints.
+Aurora produces one effective value for each of the 171 emotion nodes defined
+by ``emotion_nodes.EMOTION_WORDS`` in the live Aurora system: the strongest
+present evidence for that emotion (fresh committed activation or established
+slow mood) multiplied by Aurora's own learned Hebbian weight.  That is schema
+``aurora-state-171-effective/v4``, owned by the Aurora repository
+(``auroralm/state_contract.py`` there).  This module fixes the node order,
+validates a turn's state, and serialises it safely for datasets and
+checkpoints.  AuroraLM only consumes the state; it cannot build one from raw
+activations, because the learned weights and the slow mood live in Aurora.
 
-The raw vector is deliberately kept separate from normalisation.  Do not
+Records of the superseded versions (``aurora-state-171/v1`` raw activations,
+``aurora-state-171x2/v2`` split channels, ``aurora-state-171-weighted/v3``)
+are rejected, never converted: their values do not mean the same thing.
+
+The published form of the contract is the versioned artifact
+``docs/contracts/aurora-state-171-effective-v4.json``, carried unchanged in
+both repositories and checked by ``tests/test_shared_state_contract.py``.
+
+The vector is deliberately kept separate from normalisation.  Do not
 normalise each turn by its own maximum: that would erase the difference between
 a quiet state and an intense one.  Calibrate one fixed ceiling from recorded
 training data, save it with the run configuration, then use that same value for
@@ -14,14 +27,34 @@ training and inference.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
 from math import isfinite
 from typing import Any
 
-SCHEMA_VERSION = "aurora-state-171/v1"
+SCHEMA_VERSION = "aurora-state-171-effective/v4"
+
+# Earlier meanings of the 171 slots.  They share the node order, and therefore
+# the fingerprint, with v4, so the version string is the only thing that tells
+# them apart.
+SUPERSEDED_SCHEMA_VERSIONS: tuple[str, ...] = (
+    "aurora-state-171/v1",
+    "aurora-state-171x2/v2",
+    "aurora-state-171-weighted/v3",
+)
+
+# Keys that carried the state in superseded versions.  A record holding one is
+# not a v4 state, whatever its version string says.
+SUPERSEDED_STATE_CHANNELS: frozenset[str] = frozenset(
+    {"activations", "weights", "regulators"}
+)
+
+# The label Aurora's capture writes on a v4 state: fresh activation and slow
+# mood are already combined, so the state no longer comes from the thalamus
+# alone.
+STATE_SOURCE = "affect_pipeline"
 
 # This order is a model contract.  It must stay aligned with EMOTION_WORDS in
 # Aurora's live emotion_nodes.py.  New state meanings require a new schema
@@ -228,6 +261,10 @@ def _validate_values(values: Sequence[float]) -> tuple[float, ...]:
 
     checked: list[float] = []
     for index, raw_value in enumerate(values):
+        if isinstance(raw_value, bool):
+            raise StateSchemaError(
+                f"{EMOTION_NAMES[index]!r} must be numeric, got {raw_value!r}."
+            )
         try:
             value = float(raw_value)
         except (TypeError, ValueError) as exc:
@@ -248,16 +285,17 @@ def _validate_values(values: Sequence[float]) -> tuple[float, ...]:
 
 @dataclass(frozen=True, slots=True)
 class AuroraState171:
-    """A single validated, sparse-or-dense thalamic state at one point in time.
+    """A single validated, sparse-or-dense effective state at one point in time.
 
-    ``values`` are raw activation scores in the canonical ``EMOTION_NAMES``
-    order.  They are not per-turn normalised.  Sparse turns are represented by
-    zero values for nodes that did not fire.
+    ``values`` are effective values in the canonical ``EMOTION_NAMES`` order:
+    for each node, the strongest present evidence multiplied by Aurora's
+    learned weight.  They are not per-turn normalised.  Sparse turns are
+    represented by zero values for nodes with no present evidence.
     """
 
     values: tuple[float, ...]
     captured_at: str
-    source: str = "thalamus"
+    source: str = STATE_SOURCE
     schema_version: str = SCHEMA_VERSION
 
     def __post_init__(self) -> None:
@@ -274,7 +312,7 @@ class AuroraState171:
         cls,
         *,
         captured_at: str | None = None,
-        source: str = "thalamus",
+        source: str = STATE_SOURCE,
     ) -> AuroraState171:
         """Return an explicit no-node-fired state, not a missing state."""
         return cls(
@@ -289,10 +327,10 @@ class AuroraState171:
         activations: Mapping[str, float],
         *,
         captured_at: str | None = None,
-        source: str = "thalamus",
+        source: str = STATE_SOURCE,
         strict: bool = True,
     ) -> AuroraState171:
-        """Build a dense vector from ``{emotion_name: activation}`` pairs."""
+        """Build a dense vector from ``{emotion_name: effective value}`` pairs."""
         unknown = set(activations).difference(EMOTION_INDEX)
         if strict and unknown:
             raise StateSchemaError(
@@ -309,45 +347,6 @@ class AuroraState171:
             values=tuple(values),
             captured_at=captured_at or _utc_now(),
             source=source,
-        )
-
-    @classmethod
-    def from_active_nodes(
-        cls,
-        active_nodes: Iterable[tuple[Any, float]],
-        *,
-        captured_at: str | None = None,
-        source: str = "thalamus",
-        strict: bool = True,
-    ) -> AuroraState171:
-        """Adapt Aurora's ``[(EmotionNode, activation_score), ...]`` output.
-
-        If a node appears twice, the strongest score wins.  That preserves the
-        sparse thalamic interpretation while producing a deterministic dense
-        model input.
-        """
-        activations: dict[str, float] = {}
-        for node, raw_score in active_nodes:
-            name = getattr(node, "name", node)
-            if not isinstance(name, str):
-                raise StateSchemaError(f"Emotion node has no usable name: {node!r}.")
-            if name not in EMOTION_INDEX:
-                if strict:
-                    raise StateSchemaError(f"Unknown emotion node: {name!r}.")
-                continue
-            try:
-                score = float(raw_score)
-            except (TypeError, ValueError) as exc:
-                raise StateSchemaError(
-                    f"Activation for {name!r} must be numeric, got {raw_score!r}."
-                ) from exc
-            activations[name] = max(activations.get(name, 0.0), score)
-
-        return cls.from_mapping(
-            activations,
-            captured_at=captured_at,
-            source=source,
-            strict=strict,
         )
 
     @property
@@ -371,7 +370,7 @@ class AuroraState171:
         """Apply one fixed calibration ceiling to all turns.
 
         Choose ``activation_ceiling`` from a recorded calibration set (for
-        example a high percentile of valid thalamic scores) and store it in the
+        example a high percentile of valid effective values) and store it in the
         experiment config.  With ``clip=False`` an out-of-range live score is
         an error, not a hidden data change.
         """
@@ -422,6 +421,12 @@ class AuroraState171:
             raise StateSchemaError(
                 "State schema fingerprint does not match this model."
             )
+        superseded = SUPERSEDED_STATE_CHANNELS.intersection(record)
+        if superseded:
+            raise StateSchemaError(
+                "Superseded state channels are not valid in a "
+                f"{SCHEMA_VERSION} record: " + ", ".join(sorted(superseded))
+            )
 
         values = record.get("values")
         if not isinstance(values, Sequence) or isinstance(values, (str, bytes)):
@@ -430,7 +435,7 @@ class AuroraState171:
             )
 
         captured_at = record.get("captured_at")
-        source = record.get("source", "thalamus")
+        source = record.get("source", STATE_SOURCE)
         if not isinstance(captured_at, str) or not captured_at:
             raise StateSchemaError("State record must contain a captured_at timestamp.")
         if not isinstance(source, str):

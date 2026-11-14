@@ -13,6 +13,7 @@ from auroralm.state_schema import (
     EMOTION_COUNT,
     SCHEMA_FINGERPRINT,
     SCHEMA_VERSION,
+    STATE_SOURCE,
 )
 
 
@@ -24,7 +25,7 @@ def _record(timestamp, values):
             "schema_version": SCHEMA_VERSION,
             "schema_fingerprint": SCHEMA_FINGERPRINT,
             "captured_at": timestamp,
-            "source": "thalamus",
+            "source": STATE_SOURCE,
             "values": values,
         },
     }
@@ -64,6 +65,26 @@ class ActivationCalibrationTests(unittest.TestCase):
             output = root / "receipt.json"
             write_calibration(output, result)
             self.assertEqual(json.loads(output.read_text()), result)
+
+    def test_legacy_v1_record_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "legacy.jsonl"
+            record = _record("2026-07-31T00:00:00+00:00", [0.5] * EMOTION_COUNT)
+            record["aurora_state"]["schema_version"] = "aurora-state-171/v1"
+            path.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(CalibrationError, "Expected schema"):
+                calibrate_session_logs([path])
+
+    def test_thalamus_only_source_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "raw.jsonl"
+            record = _record("2026-07-31T00:00:00+00:00", [0.5] * EMOTION_COUNT)
+            record["aurora_state"]["source"] = "thalamus"
+            path.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(CalibrationError, "state source"):
+                calibrate_session_logs([path])
 
     def test_invalid_state_record_is_rejected_with_location(self):
         with tempfile.TemporaryDirectory() as temporary:

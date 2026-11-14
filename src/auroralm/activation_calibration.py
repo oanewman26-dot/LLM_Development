@@ -1,10 +1,13 @@
-"""Freeze AuroraLM's shared thalamic activation ceiling from real captures.
+"""Freeze AuroraLM's shared state ceiling from real captures.
 
 Calibration deliberately reads only the ``aurora_state`` portion of Aurora
 session logs.  Regulator payloads and conversation text are irrelevant to the
-raw 171-node scale and are never copied into the public calibration receipt.
+171-node scale and are never copied into the public calibration receipt.
 
-The ceiling is the maximum observed positive activation.  AuroraLM does not
+Only ``aurora-state-171-effective/v4`` records are accepted, so the ceiling is
+the maximum observed positive effective value (evidence multiplied by learned
+weight).  A receipt frozen from ``aurora-state-171/v1`` raw activations
+describes a different scale and does not carry over.  AuroraLM does not
 silently clip values during training or readiness checks, so a later capture
 above the frozen ceiling forces an explicit recalibration.
 """
@@ -21,7 +24,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from auroralm.state_schema import SCHEMA_FINGERPRINT, SCHEMA_VERSION, AuroraState171
+from auroralm.state_schema import (
+    SCHEMA_FINGERPRINT,
+    SCHEMA_VERSION,
+    STATE_SOURCE,
+    AuroraState171,
+)
 
 CALIBRATION_FORMAT_VERSION = 1
 DEFAULT_SESSION_GLOB = "aurora_training_*.jsonl"
@@ -96,8 +104,8 @@ def calibrate_session_logs(
                         if not isinstance(state_record, dict):
                             raise ValueError("aurora_state is missing")
                         state = AuroraState171.from_record(state_record)
-                        if state.source != "thalamus":
-                            raise ValueError("state source is not thalamus")
+                        if state.source != STATE_SOURCE:
+                            raise ValueError(f"state source is not {STATE_SOURCE}")
                         if record.get("timestamp") != state.captured_at:
                             raise ValueError(
                                 "turn/state capture timestamps do not match"

@@ -42,7 +42,7 @@ if len(STATE_DIMENSIONS) != EMOTION_COUNT:
         f"got {len(STATE_DIMENSIONS)}."
     )
 
-# Thalamic activation scores are non-negative and are scaled by a single
+# Effective state values are non-negative and are scaled by a single
 # calibration ceiling (see state_schema.normalised_values), not per-dimension
 # min/max. Every dimension therefore shares the same post-normalisation range.
 STATE_RANGES: dict[str, tuple[float, float]] = {
@@ -56,6 +56,12 @@ STATE_DEFAULTS: dict[str, float] = {name: 0.0 for name in STATE_DIMENSIONS}
 # positive activation with no clipping. The public receipt is tracked at
 # calibration/activation_calibration_v2.json. Any later score above this value
 # must fail closed and trigger explicit recalibration.
+#
+# That receipt was frozen from aurora-state-171/v1 raw activations. The schema
+# is now aurora-state-171-effective/v4, whose values are learned-weighted, so
+# this ceiling is not calibrated for the current schema. The readiness gate
+# compares the receipt's schema version with the current one and stays blocked
+# until a new receipt is frozen from v4 captures and this value is replaced.
 ACTIVATION_CEILING: float = 0.88
 
 
