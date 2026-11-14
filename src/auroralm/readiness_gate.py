@@ -27,6 +27,7 @@ from auroralm.config import ACTIVATION_CEILING
 from auroralm.state_schema import (
     SCHEMA_FINGERPRINT,
     SCHEMA_VERSION,
+    STATE_SOURCE,
     AuroraState171,
 )
 
@@ -500,8 +501,8 @@ def evaluate_state_material_gate(
                         if not isinstance(state_record, Mapping):
                             raise ValueError("Aurora state is missing")
                         state = AuroraState171.from_record(state_record)
-                        if state.source != "thalamus":
-                            raise ValueError("state source is not thalamus")
+                        if state.source != STATE_SOURCE:
+                            raise ValueError(f"state source is not {STATE_SOURCE}")
                         if row.get("timestamp") != state.captured_at:
                             raise ValueError(
                                 "turn/state capture timestamps do not match"

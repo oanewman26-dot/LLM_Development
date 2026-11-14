@@ -16,6 +16,7 @@ from auroralm.state_schema import (
     EMOTION_COUNT,
     SCHEMA_FINGERPRINT,
     SCHEMA_VERSION,
+    STATE_SOURCE,
 )
 
 
@@ -63,7 +64,7 @@ def _state_record(value, captured_at):
         "schema_version": SCHEMA_VERSION,
         "schema_fingerprint": SCHEMA_FINGERPRINT,
         "captured_at": captured_at,
-        "source": "thalamus",
+        "source": STATE_SOURCE,
         "values": values,
     }
 
@@ -124,6 +125,48 @@ class TestReadinessGate(unittest.TestCase):
                 0,
             )
             self.assertFalse(result["calibration"]["config_value_valid"])
+
+    def test_thalamus_only_state_source_is_not_valid_material(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            dataset = Path(temporary)
+            timestamp = "2026-07-28T00:00:00+00:00"
+            state = _state_record(0.5, timestamp)
+            state["source"] = "thalamus"
+            row = {
+                "split": "train",
+                "session_id": "session-train",
+                "timestamp": timestamp,
+                "input_text": "What do you notice?",
+                "output_text": "I notice a change.",
+                "expressed": True,
+                "alignment_quality": "exact_turn_capture",
+                "aurora_state": state,
+            }
+            stateful = dataset / "stateful_turns.jsonl"
+            stateful.write_text(json.dumps(row) + "\n", encoding="utf-8")
+            _write_json(
+                dataset / "manifest.json",
+                {
+                    "outputs": {
+                        "stateful_turns.jsonl": {
+                            "bytes": stateful.stat().st_size,
+                            "sha256": _sha256(stateful),
+                        }
+                    }
+                },
+            )
+
+            result = evaluate_state_material_gate(
+                dataset_dir=dataset,
+                activation_ceiling=1.0,
+            )
+
+            self.assertEqual(result["status"], "BLOCKED")
+            self.assertEqual(result["stateful_turns"]["valid_rows"], 0)
+            self.assertEqual(
+                result["stateful_turns"]["invalid_rows"],
+                [{"line": 1, "error": "state source is not affect_pipeline"}],
+            )
 
     def test_exact_state_data_and_frozen_calibration_can_pass(self):
         with tempfile.TemporaryDirectory() as temporary:
