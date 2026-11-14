@@ -9,6 +9,8 @@ from auroralm.activation_calibration import (
     calibrate_session_logs,
     write_calibration,
 )
+from auroralm.config import ACTIVATION_CEILING
+from auroralm.readiness_gate import DEFAULT_CALIBRATION_MANIFEST
 from auroralm.state_schema import (
     EMOTION_COUNT,
     SCHEMA_FINGERPRINT,
@@ -65,6 +67,15 @@ class ActivationCalibrationTests(unittest.TestCase):
             output = root / "receipt.json"
             write_calibration(output, result)
             self.assertEqual(json.loads(output.read_text()), result)
+
+    def test_tracked_receipt_matches_the_schema_and_the_configured_ceiling(self):
+        receipt = json.loads(DEFAULT_CALIBRATION_MANIFEST.read_text(encoding="utf-8"))
+
+        self.assertEqual(receipt["schema_version"], SCHEMA_VERSION)
+        self.assertEqual(receipt["schema_fingerprint"], SCHEMA_FINGERPRINT)
+        self.assertEqual(receipt["method"], CALIBRATION_METHOD)
+        self.assertEqual(receipt["activation_ceiling"], ACTIVATION_CEILING)
+        self.assertEqual(receipt["statistics"]["maximum"], ACTIVATION_CEILING)
 
     def test_legacy_v1_record_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:

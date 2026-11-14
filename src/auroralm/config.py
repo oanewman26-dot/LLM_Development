@@ -53,16 +53,15 @@ STATE_RANGES: dict[str, tuple[float, float]] = {
 STATE_DEFAULTS: dict[str, float] = {name: 0.0 for name in STATE_DIMENSIONS}
 
 # Frozen from a privacy-safe aggregate calibration using the maximum observed
-# positive activation with no clipping. The public receipt is tracked at
-# calibration/activation_calibration_v2.json. Any later score above this value
-# must fail closed and trigger explicit recalibration.
+# positive effective value with no clipping, over aurora-state-171-effective/v4
+# captures (19,649 records, frozen 2026-11-14). The public receipt is tracked
+# at calibration/activation_calibration_v3.json and this is its exact value;
+# the readiness gate compares the two. Any later score above this value must
+# fail closed and trigger explicit recalibration.
 #
-# That receipt was frozen from aurora-state-171/v1 raw activations. The schema
-# is now aurora-state-171-effective/v4, whose values are learned-weighted, so
-# this ceiling is not calibrated for the current schema. The readiness gate
-# compares the receipt's schema version with the current one and stays blocked
-# until a new receipt is frozen from v4 captures and this value is replaced.
-ACTIVATION_CEILING: float = 0.88
+# The earlier receipts (v1, v2; ceiling 0.88) were measured on
+# aurora-state-171/v1 raw activations and do not apply to this schema.
+ACTIVATION_CEILING: float = 0.6755945865328331
 
 
 # ---------------------------------------------------------------------------
