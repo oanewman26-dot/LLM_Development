@@ -1,0 +1,21 @@
+{
+  "activation_ceiling": 0.6755945865328331,
+  "active_score_count": 250412,
+  "format_version": 1,
+  "frozen_at": "2026-11-14T02:02:53.622573+00:00",
+  "method": "maximum observed positive activation; no clipping",
+  "privacy": "Aggregate receipt only; raw session logs and conversation text are excluded from Git.",
+  "record_count": 19649,
+  "schema_fingerprint": "d66d0993e77af71b3af245165c0f12acba1602b532619698464d35a0f7fd523a",
+  "schema_version": "aurora-state-171-effective/v4",
+  "source_digest": "89866c305e1531f05dd709ff84f35e39b3033ec6028c10e424841f9f91a5d498",
+  "source_digest_contract": "sha256(canonical JSON of ordered {sha256,record_count} descriptors)",
+  "source_log_count": 407,
+  "statistics": {
+    "maximum": 0.6755945865328331,
+    "median": 0.11904480139214049,
+    "minimum_positive": 0.005003933925820425,
+    "p95": 0.42623306849302184,
+    "p99": 0.5653062833229269
+  }
+}
