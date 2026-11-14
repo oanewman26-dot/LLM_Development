@@ -117,13 +117,18 @@ python -m pytest -q
 - `src/auroralm/state_schema.py` holds the 171 emotion names, their order and
   the fingerprint derived from them. Aurora produces this state; AuroraLM
   consumes it. Never reorder, rename, add or remove a name here on its own.
-- The canonical schema version is `aurora-state-171-effective/v4`, owned by
-  the Aurora repository. This repository still declares
-  `aurora-state-171/v1`; the migration is planned work. Until it lands, do
-  not change the declared version, and do not mix records of different
-  versions in one dataset or checkpoint.
+- The schema version is `aurora-state-171-effective/v4`, owned by the Aurora
+  repository and declared here since 2026-11-14. Each value is an effective
+  value: the strongest present evidence for the emotion multiplied by
+  Aurora's learned weight. AuroraLM consumes the state and never builds one.
+- Records of `aurora-state-171/v1` and the other superseded versions are
+  rejected, never converted. Do not mix records of different versions in one
+  dataset or checkpoint.
+- `docs/contracts/aurora-state-171-effective-v4.json` is the published
+  schema, identical in the Aurora repository, and
+  `tests/test_shared_state_contract.py` checks this repository against it.
 - A change to the schema is made in both repositories in the same piece of
-  work, with the contract test updated in each.
+  work, with the artifact and the contract test updated in each.
 
 ## 8. Protected files
 
@@ -170,9 +175,10 @@ Enforced by a check today:
 | Commit subjects | `scripts/check_commit.py` in CI and the commit hook |
 | No commit on `main` | pre-commit hook, where installed |
 | Paths named in this file exist | `tests/test_agent_instructions.py` |
+| State schema version, names, order and fingerprint match the published artifact | `tests/test_shared_state_contract.py` |
 
-On trust, with no check behind them yet: sections 1, 2, 7, 8 and 9, the
-one-subsystem rule, the cross-repository schema check, and branch protection
+On trust, with no check behind them yet: sections 1, 2, 8 and 9, the
+one-subsystem rule, and branch protection
 on `main`, which is not configured. Treat every rule here as binding either
 way, and do not rely on a check to catch you.
 
