@@ -98,7 +98,7 @@ class DatasetFixture:
             "output_text": "I am listening.",
             "expressed": True,
             "aurora_state": valid_state_record(),
-            "regulators": valid_regulators(),
+            "cognitive_regulators": valid_regulators(),
             "events": {
                 "dominant_emotion": "calm",
                 "unapproved": "excluded",
@@ -213,12 +213,23 @@ class TestDatasetBuilder(unittest.TestCase):
                 fixture.prepare()
 
             record["aurora_state"] = valid_state_record()
-            record["regulators"]["confidence"] = 1.1
+            record["cognitive_regulators"]["confidence"] = 1.1
             session_path.write_text(
                 json.dumps(record) + "\n",
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(DatasetError, "regulator 'confidence'"):
+                fixture.prepare()
+
+    def test_regulators_under_the_superseded_v1_key_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = DatasetFixture(temporary)
+            session_path = fixture.sessions / "aurora_training_session-1.jsonl"
+            record = json.loads(session_path.read_text(encoding="utf-8"))
+            record["regulators"] = record.pop("cognitive_regulators")
+            session_path.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(DatasetError, "no regulator mapping"):
                 fixture.prepare()
 
 

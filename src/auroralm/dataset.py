@@ -131,6 +131,9 @@ def _safe_subset(mapping: Any, fields: Sequence[str]) -> dict[str, Any]:
     }
 
 
+CAPTURE_REGULATORS_KEY = "cognitive_regulators"
+
+
 def _validate_regulators(value: Any, *, location: str) -> dict[str, float]:
     if not isinstance(value, Mapping):
         raise DatasetError(f"{location} has no regulator mapping")
@@ -406,8 +409,11 @@ def _validate_stateful_record(
     )
     record_id = _sha256_bytes(identity_payload.encode("utf-8"))
 
+    # An aurora-state-171-effective/v4 capture stores the regulators as
+    # telemetry beside the state, under "cognitive_regulators". The
+    # superseded v1 capture used "regulators".
     regulators = _validate_regulators(
-        record.get("regulators"),
+        record.get(CAPTURE_REGULATORS_KEY),
         location=location,
     )
     events = _safe_subset(
