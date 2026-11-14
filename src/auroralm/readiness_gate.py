@@ -36,7 +36,7 @@ DEFAULT_CALIBRATION_MANIFEST = (
     # src/auroralm/ -> project root, where calibration/ is versioned.
     Path(__file__).resolve().parents[2]
     / "calibration"
-    / "activation_calibration_v2.json"
+    / "activation_calibration_v3.json"
 )
 SCORECARD_FORMAT_VERSION = 1
 RECENT_EVALUATIONS = 5
