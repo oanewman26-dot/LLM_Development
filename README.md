@@ -64,13 +64,21 @@ A prompt can describe an internal state, but the model may ignore it, imitate
 its language without using the signal, or confuse the description with user
 content.
 
-AuroraLM instead defines the state as a versioned numerical contract:
+AuroraLM instead defines the state as a versioned numerical contract,
+`aurora-state-171-effective/v4`. Aurora produces the state and owns the
+schema; AuroraLM consumes it:
 
+- each of the 171 values is an effective value: the strongest present evidence
+  for that emotion (fresh activation or established slow mood) multiplied by
+  Aurora's learned weight for the node;
 - the 171 emotion dimensions have a fixed order;
 - missing nodes are represented explicitly as zero;
 - invalid, negative and non-finite values are rejected;
 - serialised records include a schema version and fingerprint;
 - training and inference can reject incompatible state layouts;
+- records of the superseded versions (`aurora-state-171/v1` raw activations,
+  `aurora-state-171x2/v2`, `aurora-state-171-weighted/v3`) are rejected, not
+  converted, because their values mean something different;
 - one fixed calibration ceiling preserves the difference between quiet and
   intense states.
 
@@ -78,12 +86,24 @@ The 11 regulator values remain separate from the 171 emotion nodes so signals
 such as tension, coherence, sleep pressure and confidence cannot be mistaken
 for emotions.
 
-The v1 activation ceiling is frozen at `0.78`, the maximum positive score in
-59 genuine schema-compatible captures (205 active scores across 14 session
-logs). `activation_calibration.py` validates every state record and publishes
-only aggregate statistics and source digests; raw logs and conversation text
+The schema is published as a versioned artifact,
+[docs/contracts/aurora-state-171-effective-v4.json](docs/contracts/aurora-state-171-effective-v4.json),
+carried unchanged in both repositories. `tests/test_shared_state_contract.py`
+checks this repository's definitions against it, and the Aurora repository
+has a test of the same name.
+
+`activation_calibration.py` validates every state record and publishes only
+aggregate statistics and source digests; raw logs and conversation text
 remain outside Git. Training and readiness checks reject, rather than clip, a
 future score above the frozen ceiling.
+
+**The ceiling is not calibrated for v4 yet.** The frozen receipts under
+`calibration/` and the `ACTIVATION_CEILING` of `0.88` in `config.py` were
+measured on `aurora-state-171/v1` raw activations. No receipt has been frozen
+from v4 captures, so the readiness gate reports the calibration as invalid
+and state-conditioned experiments stay blocked. Datasets and checkpoints
+built on v1 records are rejected on load and must be rebuilt from v4
+captures.
 
 ## Quick start
 
@@ -172,7 +192,7 @@ To regenerate the privacy-safe activation receipt from private Aurora logs:
 ```bash
 python -m auroralm.activation_calibration \
   --sessions-dir /path/to/aurora/session_logs \
-  --output calibration/activation_calibration_v1.json
+  --output calibration/activation_calibration_v3.json
 ```
 
 ## Tests
@@ -217,7 +237,8 @@ automated agents are in [AGENTS.md](AGENTS.md).
 | `src/auroralm/state_schema.py` | Canonical 171-dimensional state schema |
 | `src/auroralm/state_encoder.py` | State compression and optional routing-prior head |
 | `src/auroralm/activation_calibration.py` | Privacy-safe activation-ceiling calibration |
-| `calibration/activation_calibration_v1.json` | Frozen aggregate calibration receipt |
+| `calibration/` | Frozen aggregate calibration receipts (v1 and v2, both measured on the superseded v1 schema) |
+| `docs/contracts/aurora-state-171-effective-v4.json` | Published state schema, identical in the Aurora repository |
 | `src/auroralm/transformer_block.py` | Pre-norm residual block with state conditioning |
 | `src/auroralm/moe_router.py` | Bounded-state token router and routing losses |
 | `src/auroralm/experts.py` | Sparse SwiGLU dispatch, capacity handling and telemetry |
